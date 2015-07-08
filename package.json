@@ -1,0 +1,22 @@
+{
+  "name": "destiny-character-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WasabiFan/destiny-character-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WasabiFan/destiny-character-manager/issues"
+  },
+  "homepage": "https://github.com/WasabiFan/destiny-character-manager",
+  "dependencies": {
+    "destiny-client": "^0.4.4"
+  }
+}
