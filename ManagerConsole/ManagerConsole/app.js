@@ -32,7 +32,7 @@ function getVaultItems(callback) {
                 hash: cheerio.data('itemhash'),
                 stackSize: cheerio.data('stacksize'),
                 damageType: cheerio.data('damagetype'),
-                name: cheerio.children('.label span').text(),
+                name: cheerio.children('.label').children('span').text(),
                 specificType: cheerio.children('.subtitle').text(),
                 category: cheerio.parent().prev().text()
             };
