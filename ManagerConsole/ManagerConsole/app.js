@@ -8,19 +8,18 @@ var baseApiHeaders = {
 };
 
 var vaultSidebarUrl = 'https://www.bungie.net/en/Legend/VaultSidebar/1/4611686018428389840/2305843009217755842?ajax=true';
-var sidebarRequestOpts = {
-    url: vaultSidebarUrl,
-    headers: baseApiHeaders
-};
 
-function loadVaultHtml(callback) {
-    request(sidebarRequestOpts, function (shit, moreshit, data) {
+function loadBungieEndpointHtml(endpointUrl, callback) {
+    request({
+        url: endpointUrl,
+        headers: baseApiHeaders
+    }, function (shit, moreshit, data) {
         callback(data);
     });
 }
 
 function getVaultItems(callback) {
-    loadVaultHtml(function (html) {
+    loadBungieEndpointHtml(vaultSidebarUrl, function (html) {
         var items = [];
         
         var $ = cheerio.load(html);
