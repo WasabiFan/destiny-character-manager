@@ -6,7 +6,7 @@ var baseApiHeaders = {
     'Cookie': fs.readFileSync('bungie.cookie')
 };
 
-var endpointFormat = 'https://www.bungie.net/en/Legend/%s/%d/%d/%d?ajax=true';
+var endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
 
 exports.loadEndpointHtml = function(endpointUrl, callback) {
     request({
