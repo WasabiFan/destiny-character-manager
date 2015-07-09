@@ -30,7 +30,10 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="api-core.js" />
     <Compile Include="app.js" />
+    <Compile Include="gear.js" />
+    <Compile Include="vault.js" />
     <Content Include="package.json" />
     <Content Include="README.md" />
   </ItemGroup>
