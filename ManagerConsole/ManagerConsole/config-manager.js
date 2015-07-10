@@ -2,7 +2,23 @@
 
 var configFilePath = 'character-conf.json';
 var defaultConfigObj = {
-    bungieCookie: ''
+    auth: {
+        cookie: undefined,
+        memId: undefined,
+        memType: 1
+    },
+    chars: [
+        //{
+        //    alias: '',
+        //    class: 1,
+        //    charId: 8
+        //}
+    ],
+    designatedItems: {
+        //primaryWeapon: [
+        //    {...}
+        //]
+    }
 }
 
 var configCache;
