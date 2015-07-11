@@ -1,20 +1,18 @@
-﻿/// <require path="./api-core.ts" />
-
-var cheerio = require('cheerio');
-var bungie: BungieApiCore = new (require('./api-core.js').BungieApiCore)();
+﻿var cheerio = require('cheerio');
+import Bungie = require('./api-core');
 
 class GearApi {
 
-    private gearUrl = bungie.buildEndpointStr('Gear', 1, '4611686018428389840', '2305843009217755842');
+    private static gearUrl = Bungie.buildEndpointStr('Gear', 1, '4611686018428389840', '2305843009217755842');
 
-    public findBucketName(bucketId) {
+    public static findBucketName(bucketId) {
         return bucketId;
     }
 
-    public getItems(callback) {
+    public static getItems(callback) {
         var findBucketName = this.findBucketName;
 
-        bungie.loadEndpointHtml(this.gearUrl, function (html) {
+        Bungie.loadEndpointHtml(this.gearUrl, function (html) {
             var $ = cheerio.load(html);
             var buckets = {};
 
@@ -49,4 +47,4 @@ class GearApi {
     }
 }
 
-exports.GearApi = GearApi;
+export = GearApi;

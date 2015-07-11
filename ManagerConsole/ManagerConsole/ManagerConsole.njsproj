@@ -38,9 +38,11 @@
     <Content Include="package.json" />
     <Content Include="README.md" />
     <TypeScriptCompile Include="config-manager.ts" />
-    <TypeScriptCompile Include="gear.ts" />
+    <TypeScriptCompile Include="gear-api.ts" />
+    <TypeScriptCompile Include="inventory-item.ts" />
+    <TypeScriptCompile Include="parser-utils.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
-    <TypeScriptCompile Include="vault.ts" />
+    <TypeScriptCompile Include="vault-api.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Scripts\" />

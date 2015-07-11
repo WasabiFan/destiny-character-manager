@@ -1,14 +1,12 @@
-﻿/// <require path="./api-core.ts" />
-
-var cheerio = require('cheerio');
-var bungie: BungieApiCore = new (require('./api-core.js').BungieApiCore)();
+﻿var cheerio = require('cheerio');
+import Bungie = require('./api-core');
 
 class VaultApi {
 
-    private vaultUrl: string = bungie.buildEndpointStr('VaultSidebar', 1, '4611686018428389840', '2305843009217755842');
+    private static vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', 1, '4611686018428389840', '2305843009217755842');
 
-    public getItems(callback) {
-        bungie.loadEndpointHtml(this.vaultUrl, function (html) {
+    public static getItems(callback) {
+        Bungie.loadEndpointHtml(this.vaultUrl, function (html) {
             var items = [];
         
             var $ = cheerio.load(html);
@@ -33,4 +31,4 @@ class VaultApi {
     }
 }
 
-exports.VaultApi = VaultApi;
+export = VaultApi;

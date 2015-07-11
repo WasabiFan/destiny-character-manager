@@ -4,13 +4,13 @@ var util = require('util');
 
 class BungieApiCore {
 
-    private baseApiHeaders = {
+    private static baseApiHeaders = {
         'Cookie': fs.readFileSync('bungie.cookie')
     };
 
-    private endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
+    private static endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
 
-    public loadEndpointHtml(endpointUrl, callback) {
+    public static loadEndpointHtml(endpointUrl, callback) {
         request({
             url: endpointUrl,
             headers: this.baseApiHeaders
@@ -19,9 +19,9 @@ class BungieApiCore {
         });
     }
 
-    public buildEndpointStr(targetArea, memType, memId, charId) {
+    public static buildEndpointStr(targetArea, memType, memId, charId) {
         return util.format(this.endpointFormat, targetArea, memType, memId, charId);
     }
 }
 
-exports.BungieApiCore = BungieApiCore;
+export = BungieApiCore;

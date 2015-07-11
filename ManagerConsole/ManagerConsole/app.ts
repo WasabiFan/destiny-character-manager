@@ -1,13 +1,10 @@
-﻿/// <require path="./gear.ts" />
-/// <require path="./vault.ts" />
+﻿import Vault = require('./vault-api');
+import Gear = require('./gear-api');
 
-var gear: GearApi = new (require('./gear.js').GearApi)();
-var vault: VaultApi = new (require('./vault.js').VaultApi)();
-
-vault.getItems(function (items) {
+Vault.getItems(function (items) {
     console.log(items);
 });
 
-gear.getItems(function (items) {
+Gear.getItems(function (items) {
     console.log(JSON.stringify(items, null, 4));
 });
