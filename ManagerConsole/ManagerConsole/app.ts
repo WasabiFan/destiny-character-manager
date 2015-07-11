@@ -1,6 +1,8 @@
-﻿var gear = require('./gear.js');
-var vault = require('./vault.js');
+﻿/// <require path="./gear.ts" />
+/// <require path="./vault.ts" />
 
+var gear: GearApi = new (require('./gear.js').GearApi)();
+var vault: VaultApi = new (require('./vault.js').VaultApi)();
 
 vault.getItems(function (items) {
     console.log(items);

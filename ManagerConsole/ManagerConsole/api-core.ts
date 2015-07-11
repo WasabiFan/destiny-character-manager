@@ -2,21 +2,26 @@
 var fs = require('fs');
 var util = require('util');
 
-var baseApiHeaders = {
-    'Cookie': fs.readFileSync('bungie.cookie')
-};
+class BungieApiCore {
 
-var endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
+    private baseApiHeaders = {
+        'Cookie': fs.readFileSync('bungie.cookie')
+    };
 
-exports.loadEndpointHtml = function(endpointUrl, callback) {
-    request({
-        url: endpointUrl,
-        headers: baseApiHeaders
-    }, function (shit, moreshit, data) {
-        callback(data);
-    });
+    private endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
+
+    public loadEndpointHtml(endpointUrl, callback) {
+        request({
+            url: endpointUrl,
+            headers: this.baseApiHeaders
+        }, function (shit, moreshit, data) {
+            callback(data);
+        });
+    }
+
+    public buildEndpointStr(targetArea, memType, memId, charId) {
+        return util.format(this.endpointFormat, targetArea, memType, memId, charId);
+    }
 }
 
-exports.buildEndpointStr = function (targetArea, memType, memId, charId) {
-    return util.format(endpointFormat, targetArea, memType, memId, charId);
-}
+exports.BungieApiCore = BungieApiCore;

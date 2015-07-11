@@ -1,43 +1,52 @@
-﻿var cheerio = require('cheerio');
-var bungie = require('./api-core.js');
+﻿/// <require path="./api-core.ts" />
 
-var gearUrl = bungie.buildEndpointStr('Gear', 1, '4611686018428389840', '2305843009217755842');
+var cheerio = require('cheerio');
+var bungie: BungieApiCore = new (require('./api-core.js').BungieApiCore)();
 
-function findBucketName(bucketId) {
-    return bucketId;
-}
+class GearApi {
 
-exports.getItems = function(callback) {
-    bungie.loadEndpointHtml(gearUrl, function (html) {
-        var $ = cheerio.load(html);
-        var buckets = {};
+    private gearUrl = bungie.buildEndpointStr('Gear', 1, '4611686018428389840', '2305843009217755842');
 
-        $('.bucket').each(function (i, bucketElem) {
-            var bucketCheerio = $(bucketElem);
+    public findBucketName(bucketId) {
+        return bucketId;
+    }
 
-            var bucket = findBucketName(bucketCheerio.data('bucketid'));
-            var isWeapon = bucket.toLowerCase().indexOf('weapon') != -1;
+    public getItems(callback) {
+        var findBucketName = this.findBucketName;
 
-            buckets[bucket] = [];
-            bucketCheerio.find('.bucketItem').each(function (i, itemElem) {
-                var itemCheerio = $(itemElem);
+        bungie.loadEndpointHtml(this.gearUrl, function (html) {
+            var $ = cheerio.load(html);
+            var buckets = {};
 
-                var item = {
-                    'equipped': itemCheerio.hasClass('equipped'),
-                    'name': itemCheerio.find('.itemName').text(),
-                    'instanceId': itemCheerio.data('iteminstanceid'),
-                    'hash': itemCheerio.data('itemhash'),
-                    'stackSize': itemCheerio.data('stacksize'),
-                    'tier': itemCheerio.find('.tierTypeName').text()
-                };
+            $('.bucket').each(function (i, bucketElem) {
+                var bucketCheerio = $(bucketElem);
 
-                if (isWeapon)
-                    item['damageType'] = itemCheerio.find('.destinyTooltip').data('damagetype');
+                var bucket = findBucketName(bucketCheerio.data('bucketid'));
+                var isWeapon = bucket.toLowerCase().indexOf('weapon') != -1;
 
-                buckets[bucket].push(item);
+                buckets[bucket] = [];
+                bucketCheerio.find('.bucketItem').each(function (i, itemElem) {
+                    var itemCheerio = $(itemElem);
+
+                    var item = {
+                        'equipped': itemCheerio.hasClass('equipped'),
+                        'name': itemCheerio.find('.itemName').text(),
+                        'instanceId': itemCheerio.data('iteminstanceid'),
+                        'hash': itemCheerio.data('itemhash'),
+                        'stackSize': itemCheerio.data('stacksize'),
+                        'tier': itemCheerio.find('.tierTypeName').text()
+                    };
+
+                    if (isWeapon)
+                        item['damageType'] = itemCheerio.find('.destinyTooltip').data('damagetype');
+
+                    buckets[bucket].push(item);
+                });
             });
-        });
 
-        callback(buckets);
-    });
+            callback(buckets);
+        });
+    }
 }
+
+exports.GearApi = GearApi;
