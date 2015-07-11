@@ -1,52 +1,55 @@
 ﻿var fs = require('fs');
 
-var configFilePath = 'character-conf.json';
-var defaultConfigObj = {
-    auth: {
-        cookie: undefined,
-        memId: undefined,
-        memType: 1
-    },
-    chars: [
-        //{
-        //    alias: '',
-        //    class: 1,
-        //    charId: 8
-        //}
-    ],
-    designatedItems: {
-        //primaryWeapon: [
-        //    {...}
-        //]
+class ConfigManager {
+    private static configFilePath = 'character-conf.json';
+    private static defaultConfigObj = {
+        auth: {
+            cookie: undefined,
+            memId: undefined,
+            memType: 1
+        },
+        chars: [
+            //{
+            //    alias: '',
+            //    class: 1,
+            //    charId: 8
+            //}
+        ],
+        designatedItems: {
+            //primaryWeapon: [
+            //    {...}
+            //]
+        }
+    }
+
+    private static configCache;
+
+    public static load() {
+        try {
+            var configStr = fs.readFileSync(this.configFilePath);
+            this.configCache = JSON.parse(configStr);
+        }
+        catch (e) {
+            this.configCache = this.defaultConfigObj;
+            return;
+        }
+    }
+
+    public static save = function () {
+        if (this.configCache == undefined)
+            this.configCache = this.defaultConfigObj;
+
+        fs.writeFileSync(this.configFilePath, JSON.stringify(this.configCache));
+    }
+
+    public static get = function (name: string) {
+        return this.configCache[name];
+    }
+
+    public static set = function (name, property) {
+        return this.configCache[name] = property;
     }
 }
 
-var configCache;
-
-exports.load = function () {
-    try {
-        var configStr = fs.readFileSync(configFilePath);
-        configCache = JSON.parse(configStr);
-    }
-    catch (e) {
-        configCache = defaultConfigObj;
-        return;
-    }
-};
-
-exports.save = function () {
-    if (configCache == undefined)
-        configCache = defaultConfigObj;
-
-    fs.writeFileSync(configFilePath, JSON.stringify(configCache));
-}
-
-exports.get = function (name) {
-    return configCache[name];
-}
-
-exports.set = function (name, property) {
-    return configCache[name] = property;
-}
-
-exports.load();
+export = ConfigManager;
+ConfigManager.load();
