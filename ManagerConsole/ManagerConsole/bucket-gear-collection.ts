@@ -21,6 +21,15 @@ class BucketGearCollection {
         return null;
     }
 
+    public getAllItems(): Inventory.GearItem[]{
+        var result: Inventory.GearItem[] = [];
+        for (var bucket in this.bucketMap) {
+            result = result.concat(this.bucketMap[bucket]);
+        }
+
+        return result;
+    }
+
     private createBucket(bucket: Inventory.GearBucket) {
         if (!(this.bucketMap[bucket] instanceof Array))
             this.bucketMap[bucket] = [];
