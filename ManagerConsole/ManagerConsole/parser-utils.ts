@@ -12,7 +12,7 @@ class ParserUtils {
     private static gearBucketLookupTable: { [bucketId: string]: Inventory.GearBucket } = {
         'BUCKET_BUILD': Inventory.GearBucket.Subclass,
         'BUCKET_PRIMARY_WEAPON': Inventory.GearBucket.PrimaryWeapon,
-        'BUCLET_SPECIAL_WEAPON': Inventory.GearBucket.SpecialWeapon,
+        'BUCKET_SPECIAL_WEAPON': Inventory.GearBucket.SpecialWeapon,
         'BUCKET_HEAVY_WEAPON': Inventory.GearBucket.HeavyWeapon,
         'BUCKET_HEAD': Inventory.GearBucket.Helmet,
         'BUCKET_ARMS': Inventory.GearBucket.Gauntlets,

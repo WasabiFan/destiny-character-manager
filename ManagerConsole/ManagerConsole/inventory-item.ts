@@ -2,7 +2,7 @@
     public name: string;
     public tier: InventoryItemTier;
     public type: InventoryItemType;
-    public itemId: string;
+    public instanceId: string;
     public itemHash: string;
 }
 
