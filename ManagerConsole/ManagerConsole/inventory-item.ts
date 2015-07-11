@@ -75,10 +75,14 @@ export enum InventoryItemType {
 
     // Armor
     Helmet,
-    Gauntlet,
+    Gauntlets,
     ChestArmor,
     LegArmor,
-    ClassItem,
+
+    //Class Items
+    WarlockBond,
+    HunterCloak,
+    TitanMark,
 
     // Equipment
     GhostShell,
