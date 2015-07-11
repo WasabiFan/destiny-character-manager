@@ -1,7 +1,7 @@
 ﻿import Inventory = require('./inventory-item');
 
 class ParserUtils {
-    private static itemTierLookupTable = {
+    private static itemTierLookupTable: { [name: string]: Inventory.InventoryItemTier } = {
         'Exotic': Inventory.InventoryItemTier.Exotic,
         'Legendary': Inventory.InventoryItemTier.Legendary,
         'Rare': Inventory.InventoryItemTier.Rare,
@@ -9,7 +9,7 @@ class ParserUtils {
         'Common': Inventory.InventoryItemTier.Common
     };
 
-    private static gearBucketLookupTable = {
+    private static gearBucketLookupTable: { [bucketId: string]: Inventory.GearBucket } = {
         'BUCKET_BUILD': Inventory.GearBucket.Subclass,
         'BUCKET_PRIMARY_WEAPON': Inventory.GearBucket.PrimaryWeapon,
         'BUCLET_SPECIAL_WEAPON': Inventory.GearBucket.SpecialWeapon,
@@ -26,7 +26,7 @@ class ParserUtils {
         'BUCKET_EMBLEM': Inventory.GearBucket.Emblem
     };
 
-    private static itemTypeLookupTable = {
+    private static itemTypeLookupTable: { [name: string]: Inventory.InventoryItemType } = {
         'Auto Rifle': Inventory.InventoryItemType.AutoRifle,
         'Pulse Rifle': Inventory.InventoryItemType.PulseRifle,
         'Scout Rifle': Inventory.InventoryItemType.ScoutRifle,
@@ -53,7 +53,7 @@ class ParserUtils {
         'Currency': Inventory.InventoryItemType.Currency
     };
 
-    private static damageTypeLookupTable = {
+    private static damageTypeLookupTable: { [name: string]: Inventory.DamageType } = {
         'None': Inventory.DamageType.None,
         'Kinetic': Inventory.DamageType.Kinetic,
         'Solar': Inventory.DamageType.Solar,
@@ -70,11 +70,9 @@ class ParserUtils {
     }
 
     public static isWeapon(bucket: Inventory.GearBucket): boolean {
-        if (bucket == Inventory.GearBucket.PrimaryWeapon || bucket == Inventory.GearBucket.SpecialWeapon || Inventory.GearBucket.HeavyWeapon) {
-            return true;
-        }
-        else
-            return false;
+        return bucket == Inventory.GearBucket.PrimaryWeapon
+            || bucket == Inventory.GearBucket.SpecialWeapon
+            || bucket == Inventory.GearBucket.HeavyWeapon
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {
@@ -87,31 +85,25 @@ class ParserUtils {
 
 
     public static stringifyInventoryItemTier(tier: Inventory.InventoryItemTier): string {
-        var arr = Object.keys(this.itemTierLookupTable);
-        for (var i = 0; i < arr.length; i++)
-            if (tier == this.itemTierLookupTable[arr[i]])
-                return arr[i];
+        return this.reverseDictionaryLookup(this.itemTierLookupTable, tier);
     }
 
     public static stringifyGearBucket(bucket: Inventory.GearBucket): string {
-        var arr = Object.keys(this.gearBucketLookupTable);
-        for (var i = 0; i < arr.length; i++)
-            if (bucket == this.gearBucketLookupTable[arr[i]])
-                return arr[i];
+        return this.reverseDictionaryLookup(this.gearBucketLookupTable, bucket);
     }
 
     public static stringifyInventoryItemType(itemType: Inventory.InventoryItemType): string {
-        var arr = Object.keys(this.itemTypeLookupTable);
-        for (var i = 0; i < arr.length; i++)
-            if (itemType == this.itemTierLookupTable[arr[i]])
-                return arr[i];
+        return this.reverseDictionaryLookup(this.itemTypeLookupTable, itemType);
     }
 
     public static stringifyDamageType(damageType: Inventory.DamageType): string {
-        var arr = Object.keys(this.damageTypeLookupTable);
-        for (var i = 0; i < arr.length; i++)
-            if (damageType == this.damageTypeLookupTable[arr[i]])
-                return arr[i];
+        return this.reverseDictionaryLookup(this.damageTypeLookupTable, damageType);
+    }
+
+    private static reverseDictionaryLookup(dict: { [key: string]: any }, lookupValue: any): string {
+        for (var originalKey in dict)
+            if (dict[originalKey] === lookupValue)
+                return originalKey;
     }
 }
 
