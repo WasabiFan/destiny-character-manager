@@ -26,6 +26,9 @@ build/Release
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
 
-ManagerConsole/ManagerConsole/*.js
-ManagerConsole/ManagerConsole/*.map
+ManagerConsole/ManagerConsole/**/*.js
+ManagerConsole/ManagerConsole/**/*.map
 ManagerConsole/ManagerConsole/obj/
+ManagerConsole/ManagerConsole/bin/
+ManagerConsole/ManagerConsole/Build/
+ManagerConsole/ManagerConsole/conf.json
