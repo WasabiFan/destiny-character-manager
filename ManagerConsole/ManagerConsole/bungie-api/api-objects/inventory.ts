@@ -18,6 +18,7 @@
 
     public getIsEquipped(): boolean {
         // TODO
+        return false;
     }
 }
 

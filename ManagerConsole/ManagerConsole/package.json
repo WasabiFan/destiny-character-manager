@@ -17,8 +17,9 @@
   },
   "homepage": "https://github.com/WasabiFan/destiny-character-manager",
   "dependencies": {
-    "destiny-client": "^0.4.4",
     "cheerio": "^0.19.0",
+    "destiny-client": "^0.4.4",
+    "es6-promise": "^2.3.0",
     "request": "^2.58.0"
   }
 }

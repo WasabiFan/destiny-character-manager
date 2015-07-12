@@ -9,22 +9,25 @@ import Characters = require('./api-objects/character');
 import Configuration = require('../config-manager');
 
 class VaultApi {
-    public static getItems(targetCharacter: Characters.Character, callback: (vaultItems: Inventory.InventoryItem[]) => void) {
+    public static getItems(targetCharacter: Characters.Character): Promise<Inventory.InventoryItem[]> {
         var vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', Configuration.currentConfig.authMember, targetCharacter);
+        var promise = new Promise(function (resolve, reject) {
+            Bungie.loadEndpointHtml(vaultUrl).then((html) => {
+                var items = [];
 
-        Bungie.loadEndpointHtml(vaultUrl, (html) => {
-            var items = [];
-        
-            var $ = cheerio.load(html);
-            $('.sidebarItem.inVault').each((i, element) => {
-                var cheerioItem = $(this);
-                var itemInfo = this.loadVaultItemFromCheerio(cheerioItem);
-            
-                items.push(itemInfo);
+                var $ = cheerio.load(html);
+                $('.sidebarItem.inVault').each((i, element) => {
+                    var cheerioItem = $(this);
+                    var itemInfo = this.loadVaultItemFromCheerio(cheerioItem);
+
+                    items.push(itemInfo);
+                });
+
+                resolve(items);
             });
-        
-            callback(items);
         });
+
+        return promise;
     }
 
     private static loadVaultItemFromCheerio(itemCheerio: Cheerio): Inventory.InventoryItem {

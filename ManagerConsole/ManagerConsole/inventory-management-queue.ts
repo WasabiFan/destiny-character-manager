@@ -1,10 +1,14 @@
 ﻿import Inventory = require('./bungie-api/api-objects/inventory');
 
 export class InventoryManagementQueue {
-    public loadState() {
+    private workingState: InventoryState;
+
+    public loadState(complete: Function) {
+
     }
 
     public getCurrentState(): InventoryState {
+        return null;
     }
 
     public addMoveToQueue(fromBucket: InventoryBucketState, toBucket: InventoryBucketState, item: Inventory.InventoryItem) {

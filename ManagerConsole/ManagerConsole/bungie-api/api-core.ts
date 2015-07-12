@@ -1,4 +1,6 @@
-﻿var request = require('request');
+﻿/// <reference path="../Scripts/typings/es6-promise/es6-promise.d.ts" />
+
+var request = require('request');
 var fs = require('fs');
 var util = require('util');
 
@@ -14,13 +16,19 @@ class BungieApiCore {
 
     private static endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
 
-    public static loadEndpointHtml(endpointUrl: string, callback: (data: string) => void) {
-        request({
-            url: endpointUrl,
-            headers: this.baseApiHeaders
-        }, function (shit, moreshit, data) {
-            callback(data);
+    public static loadEndpointHtml(endpointUrl: string): Promise<string> {
+        var promise = new Promise(function (resolve, reject) {
+            var opts = {
+                url: endpointUrl,
+                headers: this.baseApiHeaders
+            };
+
+            request(opts, function (shit, moreshit, data) {
+                resolve(data);
+            });
         });
+
+        return promise;
     }
 
     public static buildEndpointStr(targetArea, member: Membership.Member, character: Character.Character) {

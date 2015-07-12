@@ -1,4 +1,6 @@
-﻿import Vault = require('./bungie-api/vault-api');
+﻿require('es6-promise').polyfill();
+
+import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
