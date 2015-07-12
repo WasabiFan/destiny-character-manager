@@ -1,17 +1,18 @@
-﻿/// <reference path="Scripts/typings/cheerio/cheerio.d.ts" />
+﻿/// <reference path="../Scripts/typings/cheerio/cheerio.d.ts" />
 
 import cheerio = require('cheerio');
 import Bungie = require('./api-core');
-import Inventory = require('./inventory-item');
+import Inventory = require('./api-objects/inventory');
 import ParserUtils = require('./parser-utils');
-import BucketGearCollection = require('./bucket-gear-collection');
+import BucketGearCollection = require('./api-objects/bucket-gear-collection');
+import Characters = require('./api-objects/character');
+import Configuration = require('../config-manager');
 
 class GearApi {
+    public static getItems(targetCharacter: Characters.Character, callback: (buckets: BucketGearCollection) => void) {
+        var gearUrl = Bungie.buildEndpointStr('Gear', Configuration.currentConfig.authMember, targetCharacter);
 
-    private static gearUrl = Bungie.buildEndpointStr('Gear', 1, '4611686018428389840', '2305843009217755842');
-
-    public static getItems(callback: (buckets: BucketGearCollection) => any) {
-        Bungie.loadEndpointHtml(this.gearUrl, html => {
+        Bungie.loadEndpointHtml(gearUrl, html => {
             var $ = cheerio.load(html);
             var buckets = new BucketGearCollection();
 
@@ -36,9 +37,8 @@ class GearApi {
         var item: Inventory.GearItem = new Inventory.GearItem();
 
         if (ParserUtils.isWeapon(currentBucket)) {
-            var weapon = new Inventory.WeaponItem();
-            weapon.damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
-            item = weapon;
+            item = new Inventory.WeaponItem();
+            (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
         }
 
         item.isEquipped = itemCheerio.hasClass('equipped');

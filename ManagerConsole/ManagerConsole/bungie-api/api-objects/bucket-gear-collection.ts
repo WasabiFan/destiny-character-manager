@@ -1,4 +1,4 @@
-﻿import Inventory = require('./inventory-item');
+﻿import Inventory = require('./inventory');
 
 class BucketGearCollection {
 

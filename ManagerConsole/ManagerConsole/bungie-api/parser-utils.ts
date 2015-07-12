@@ -1,4 +1,4 @@
-﻿import Inventory = require('./inventory-item');
+﻿import Inventory = require('./api-objects/inventory');
 
 class ParserUtils {
     private static itemTierLookupTable: { [name: string]: Inventory.InventoryItemTier } = {
@@ -72,7 +72,7 @@ class ParserUtils {
     public static isWeapon(bucket: Inventory.GearBucket): boolean {
         return bucket == Inventory.GearBucket.PrimaryWeapon
             || bucket == Inventory.GearBucket.SpecialWeapon
-            || bucket == Inventory.GearBucket.HeavyWeapon
+            || bucket == Inventory.GearBucket.HeavyWeapon;
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {

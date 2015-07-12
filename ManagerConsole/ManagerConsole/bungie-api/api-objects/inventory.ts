@@ -24,7 +24,8 @@ export enum InventoryItemTier {
     Uncommon,
     Rare,
     Legendary,
-    Exotic
+    Exotic,
+    Unknown = -1
 }
 
 export enum GearBucket {
@@ -48,7 +49,10 @@ export enum GearBucket {
     Vehicle,
     Ship,
     ArmorShader,
-    Emblem
+    Emblem,
+
+    // Unknown
+    Unknown = -1
 }
 
 export enum InventoryItemType {

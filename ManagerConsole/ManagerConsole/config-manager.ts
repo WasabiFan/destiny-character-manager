@@ -1,55 +1,43 @@
-﻿var fs = require('fs');
+﻿import fs = require('fs');
+import Membership = require('./bungie-api/api-objects/membership');
+import Character = require('./bungie-api/api-objects/character');
+import Inventory = require('./bungie-api/api-objects/inventory');
 
-class ConfigManager {
-    private static configFilePath = 'character-conf.json';
-    private static defaultConfigObj = {
-        auth: {
-            cookie: undefined,
-            memId: undefined,
-            memType: 1
-        },
-        chars: [
-            //{
-            //    alias: '',
-            //    class: 1,
-            //    charId: 8
-            //}
-        ],
-        designatedItems: {
-            //primaryWeapon: [
-            //    {...}
-            //]
-        }
-    }
+class AppConfiguration {
+    private static configFilePath = 'conf.json';
 
-    private static configCache;
+    public static currentConfig: AppConfiguration;
 
-    public static load() {
+    public authCookie: string;
+    public authMember: Membership.Member;
+
+    public characters: Character.AliasedCharacter[] = [];
+    public designatedItems: Inventory.InventoryItem[] = [];
+
+    public static load(): AppConfiguration {
         try {
             var configStr = fs.readFileSync(this.configFilePath);
-            this.configCache = JSON.parse(configStr);
+            var jsonVal = JSON.parse(configStr.toString());
+
+            var newConf = new AppConfiguration();
+            newConf.authCookie = jsonVal.authCookie;
+            newConf.authMember = jsonVal.authMember;
+            newConf.characters = jsonVal.characters;
+            newConf.designatedItems = jsonVal.designatedItems;
+
+            return newConf;
         }
         catch (e) {
-            this.configCache = this.defaultConfigObj;
-            return;
+            return new AppConfiguration();
         }
     }
 
-    public static save = function () {
-        if (this.configCache == undefined)
-            this.configCache = this.defaultConfigObj;
-
-        fs.writeFileSync(this.configFilePath, JSON.stringify(this.configCache));
-    }
-
-    public static get = function (name: string) {
-        return this.configCache[name];
-    }
-
-    public static set = function (name, property) {
-        return this.configCache[name] = property;
+    public save() {
+        fs.writeFileSync(AppConfiguration.configFilePath, JSON.stringify(this, null, 4));
     }
 }
 
-export = ConfigManager;
-ConfigManager.load();
+export = AppConfiguration;
+
+AppConfiguration.currentConfig = AppConfiguration.load();
+console.log('Loaded configuration');

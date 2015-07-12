@@ -33,20 +33,24 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="api-core.ts" />
+    <TypeScriptCompile Include="bungie-api\api-core.ts" />
     <TypeScriptCompile Include="app.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
-    <TypeScriptCompile Include="bucket-gear-collection.ts" />
+    <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
+    <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
     <TypeScriptCompile Include="config-manager.ts" />
-    <TypeScriptCompile Include="gear-api.ts" />
-    <TypeScriptCompile Include="inventory-item.ts" />
-    <TypeScriptCompile Include="parser-utils.ts" />
+    <TypeScriptCompile Include="bungie-api\gear-api.ts" />
+    <TypeScriptCompile Include="bungie-api\api-objects\inventory.ts" />
+    <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
+    <TypeScriptCompile Include="bungie-api\parser-utils.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
-    <TypeScriptCompile Include="vault-api.ts" />
+    <TypeScriptCompile Include="bungie-api\vault-api.ts" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="bungie-api\" />
+    <Folder Include="bungie-api\api-objects\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
     <Folder Include="Scripts\typings\cheerio\" />
