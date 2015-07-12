@@ -76,7 +76,7 @@ export class InventoryManagementQueue {
         return this.workingState;
     }
 
-    public addMoveOperationToQueue(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
+    public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.MoveItem;
         newOperation.requiresAuth = true;
@@ -94,6 +94,10 @@ export class InventoryManagementQueue {
 
         this.operationQueue.push(newOperation);
         this.processQueueAddition(newOperation);
+    }
+
+    public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem) {
+
     }
 
     private processQueueAddition(newOperation: QueuedOperation) {
