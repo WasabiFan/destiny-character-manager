@@ -116,6 +116,7 @@ class ParserUtils {
     }
 
     public static getGearBucketForVaultItem(item: Inventory.InventoryItem): Inventory.InventoryBucket {
+        // TODO
         return 0;
     }
 

@@ -1,4 +1,4 @@
-﻿var destiny = require('destiny-client');
+﻿var destiny = require('destiny-client')();
 import Bungie = require('./bungie-api/api-core');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Configuration = require('./config-manager');
@@ -10,18 +10,18 @@ import ParserUtils = require('./bungie-api/parser-utils');
 
 export class InventoryManagementQueue {
     private workingState: InventoryState;
-    private operationQueue: QueuedOperation[];
+    private operationQueue: QueuedOperation[] = [];
     private lastQueueOperationPromise: Promise<any>;
 
     public loadState(): Promise<any> {
-        this.workingState = new InventoryState();
+        var workingState = this.workingState = new InventoryState();
 
         var promises: Promise<any>[] = [];
         for (var characterIndex in Configuration.currentConfig.characters) {
             var promise = new Promise((resolve, reject) => {
                 // TODO: inventory
                 Gear.getItems(Configuration.currentConfig.characters[characterIndex]).then(buckets => {
-                    this.workingState.characters.push(this.getCharacterFromBuckets(buckets, Configuration.currentConfig.characters[characterIndex]));
+                    workingState.characters.push(this.getCharacterFromBuckets(buckets, Configuration.currentConfig.characters[characterIndex]));
                     resolve();
                 });
             });
@@ -33,7 +33,7 @@ export class InventoryManagementQueue {
                 this.workingState.vault = new VaultInventoryState();
                 var buckets = new BucketGearCollection(items);
 
-                this.workingState.vault.buckets = this.getBucketStatesFromBuckets(buckets);
+                workingState.vault.buckets = this.getBucketStatesFromBuckets(buckets);
 
                 resolve();
             });
@@ -58,7 +58,7 @@ export class InventoryManagementQueue {
 
         for (var bucketId in bucketMap) {
             var newBucket = new InventoryBucketState();
-            newBucket.bucketType = (<Inventory.InventoryBucket>bucketId);
+            newBucket.bucketType = (<Inventory.InventoryBucket>Number(bucketId));
             newBucket.capacity = ParserUtils.findCapacityForBucket(newBucket.bucketType);
             newBucket.parentCharacter = parent;
 
@@ -76,21 +76,20 @@ export class InventoryManagementQueue {
         return this.workingState;
     }
 
-    public addMoveOperationToQueue(fromBucket: InventoryBucketState, toBucket: InventoryBucketState, item: Inventory.InventoryItem) {
+    public addMoveOperationToQueue(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.MoveItem;
         newOperation.requiresAuth = true;
 
-        var currentCharacter = fromBucket.parentCharacter || toBucket.parentCharacter;
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
 
         newOperation.operationParams = {
             membershipType: Configuration.currentConfig.authMember.type,
-            characterId: currentCharacter.id,
+            characterId: character.character.id,
             itemId: item.instanceId,
             itemReferenceHash: item.itemHash,
             stackSize: stackSize,
-            transferToVault: ParserUtils.isVault(toBucket.bucketType)
+            transferToVault: toVault
         };
 
         this.operationQueue.push(newOperation);
@@ -98,6 +97,7 @@ export class InventoryManagementQueue {
     }
 
     private processQueueAddition(newOperation: QueuedOperation) {
+        console.log('Adding operation to queue');
         var newPromise = new Promise((resolve, reject) => {
             var executeAction = () => {
                 this.executeQueuedOperation(newOperation).then(() => {
@@ -110,6 +110,8 @@ export class InventoryManagementQueue {
             else
                 this.lastQueueOperationPromise.then(executeAction);
         });
+
+        this.lastQueueOperationPromise = newPromise;
     }
 
     private executeQueuedOperation(operation: QueuedOperation): Promise<any> {
@@ -121,11 +123,10 @@ export class InventoryManagementQueue {
                 break;
         }
 
-        var args = [operation.operationParams];
-        if (operation.requiresAuth)
-            args.push(Bungie.getAuthHeaders());
+        console.log('Executing operation "' + operation.type.toString() + '" with params: ' + JSON.stringify(operation.operationParams, null, 4)); 
 
-        return destinyApiFunction.apply(destiny, args);
+        return destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders());
+
     }
 }
 

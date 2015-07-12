@@ -11,14 +11,15 @@ import Configuration = require('../config-manager');
 class VaultApi {
     public static getItems(targetCharacter: Characters.Character): Promise<Inventory.InventoryItem[]> {
         var vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', Configuration.currentConfig.authMember, targetCharacter);
-        var promise = new Promise(function (resolve, reject) {
+        var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(vaultUrl).then((html) => {
                 var items = [];
 
                 var $ = cheerio.load(html);
+                var me = this;
                 $('.sidebarItem.inVault').each((i, element) => {
-                    var cheerioItem = $(this);
-                    var itemInfo = this.loadVaultItemFromCheerio(cheerioItem);
+                    var cheerioItem = $(element);
+                    var itemInfo = me.loadVaultItemFromCheerio(cheerioItem);
 
                     items.push(itemInfo);
                 });

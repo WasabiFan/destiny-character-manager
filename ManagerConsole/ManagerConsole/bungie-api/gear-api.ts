@@ -11,7 +11,7 @@ import Configuration = require('../config-manager');
 class GearApi {
     public static getItems(targetCharacter: Characters.Character): Promise<BucketGearCollection> {
         var gearUrl = Bungie.buildEndpointStr('Gear', Configuration.currentConfig.authMember, targetCharacter);
-        var promise = new Promise(function (resolve, reject) {
+        var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(gearUrl).then(html => {
                 var $ = cheerio.load(html);
                 var buckets = new BucketGearCollection();
@@ -29,7 +29,7 @@ class GearApi {
                     });
                 });
 
-                resolve(BucketGearCollection);
+                resolve(buckets);
             });
         });
 
