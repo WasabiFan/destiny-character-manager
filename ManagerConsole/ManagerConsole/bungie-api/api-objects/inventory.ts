@@ -4,6 +4,7 @@
     public type: InventoryItemType;
     public instanceId: string;
     public itemHash: string;
+    public bucket: InventoryBucket;
 
     public static loadFromPlain(plainObj: any): InventoryItem {
         var newItem = new InventoryItem();
@@ -28,7 +29,6 @@ export class StackableItem extends InventoryItem {
 
 export class GearItem extends InventoryItem {
     public isEquipped: boolean;
-    public bucket: GearBucket;
 }
 
 export class WeaponItem extends GearItem {
@@ -44,7 +44,7 @@ export enum InventoryItemTier {
     Unknown = -1
 }
 
-export enum GearBucket {
+export enum InventoryBucket {
     // Subclass
     Subclass,
 
@@ -66,6 +66,15 @@ export enum GearBucket {
     Ship,
     ArmorShader,
     Emblem,
+
+    // Vault
+    VaultWeapon,
+    VaultArmor,
+    VaultGeneral,
+    
+    // Stackables
+    Materials,
+    Consumables,
 
     // Unknown
     Unknown = -1

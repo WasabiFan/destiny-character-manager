@@ -9,21 +9,30 @@ class ParserUtils {
         'Common': Inventory.InventoryItemTier.Common
     };
 
-    private static gearBucketLookupTable: { [bucketId: string]: Inventory.GearBucket } = {
-        'BUCKET_BUILD': Inventory.GearBucket.Subclass,
-        'BUCKET_PRIMARY_WEAPON': Inventory.GearBucket.PrimaryWeapon,
-        'BUCKET_SPECIAL_WEAPON': Inventory.GearBucket.SpecialWeapon,
-        'BUCKET_HEAVY_WEAPON': Inventory.GearBucket.HeavyWeapon,
-        'BUCKET_HEAD': Inventory.GearBucket.Helmet,
-        'BUCKET_ARMS': Inventory.GearBucket.Gauntlets,
-        'BUCKET_CHEST': Inventory.GearBucket.ChestArmor,
-        'BUCKET_LEGS': Inventory.GearBucket.LegArmor,
-        'BUCKET_CLASS_ITEMS': Inventory.GearBucket.ClassItem,
-        'BUCKET_GHOST': Inventory.GearBucket.GhostShell,
-        'BUCKET_VEHICLE': Inventory.GearBucket.Vehicle,
-        'BUCKET_SHIP': Inventory.GearBucket.Ship,
-        'BUCKET_SHADER': Inventory.GearBucket.ArmorShader,
-        'BUCKET_EMBLEM': Inventory.GearBucket.Emblem
+    private static inventoryBucketLookupTable: { [bucketId: string]: Inventory.InventoryBucket } = {
+        // Official buckets
+        'BUCKET_BUILD': Inventory.InventoryBucket.Subclass,
+        'BUCKET_PRIMARY_WEAPON': Inventory.InventoryBucket.PrimaryWeapon,
+        'BUCKET_SPECIAL_WEAPON': Inventory.InventoryBucket.SpecialWeapon,
+        'BUCKET_HEAVY_WEAPON': Inventory.InventoryBucket.HeavyWeapon,
+        'BUCKET_HEAD': Inventory.InventoryBucket.Helmet,
+        'BUCKET_ARMS': Inventory.InventoryBucket.Gauntlets,
+        'BUCKET_CHEST': Inventory.InventoryBucket.ChestArmor,
+        'BUCKET_LEGS': Inventory.InventoryBucket.LegArmor,
+        'BUCKET_CLASS_ITEMS': Inventory.InventoryBucket.ClassItem,
+        'BUCKET_GHOST': Inventory.InventoryBucket.GhostShell,
+        'BUCKET_VEHICLE': Inventory.InventoryBucket.Vehicle,
+        'BUCKET_SHIP': Inventory.InventoryBucket.Ship,
+        'BUCKET_SHADER': Inventory.InventoryBucket.ArmorShader,
+        'BUCKET_EMBLEM': Inventory.InventoryBucket.Emblem,
+        'BUCKET_MATERIALS': Inventory.InventoryBucket.Materials,
+        'BUCKET_CONSUMABLES': Inventory.InventoryBucket.Consumables,
+
+        // Custom vault buckets
+        'BUCKET_VAULT_WEAPON': Inventory.InventoryBucket.VaultWeapon,
+        'BUCKET_VAULT_ARMOR': Inventory.InventoryBucket.VaultArmor,
+        'BUCKET_VAULT_GENERAL': Inventory.InventoryBucket.VaultGeneral
+
     };
 
     private static itemTypeLookupTable: { [name: string]: Inventory.InventoryItemType } = {
@@ -61,18 +70,53 @@ class ParserUtils {
         'Void': Inventory.DamageType.Void
     };
 
+    private static bucketCapacityLookupTable: { [bucketType: string]: number } = {
+        // Official buckets
+        'BUCKET_BUILD': 2,
+        'BUCKET_PRIMARY_WEAPON': 10,
+        'BUCKET_SPECIAL_WEAPON': 10,
+        'BUCKET_HEAVY_WEAPON': 10,
+        'BUCKET_HEAD': 10,
+        'BUCKET_ARMS': 10,
+        'BUCKET_CHEST': 10,
+        'BUCKET_LEGS': 10,
+        'BUCKET_CLASS_ITEMS': 10,
+        'BUCKET_GHOST': 10,
+        'BUCKET_VEHICLE': 10,
+        'BUCKET_SHIP': 10,
+        'BUCKET_SHADER': 10,
+        'BUCKET_EMBLEM': 10,
+        'BUCKET_MATERIALS': 15,
+        'BUCKET_CONSUMABLES': 15,
+
+        // Custom vault buckets
+        'BUCKET_VAULT_WEAPON': 36,
+        'BUCKET_VAULT_ARMOR': 24,
+        'BUCKET_VAULT_GENERAL': 24
+    };
+
     public static parseInventoryItemTier(tierString: string): Inventory.InventoryItemTier {
         return this.itemTierLookupTable[tierString];
     }
 
-    public static parseGearBucket(bucketString: string): Inventory.GearBucket {
-        return this.gearBucketLookupTable[bucketString];
+    public static parseInventoryBucket(bucketString: string): Inventory.InventoryBucket {
+        return this.inventoryBucketLookupTable[bucketString];
     }
 
-    public static isWeapon(bucket: Inventory.GearBucket): boolean {
-        return bucket == Inventory.GearBucket.PrimaryWeapon
-            || bucket == Inventory.GearBucket.SpecialWeapon
-            || bucket == Inventory.GearBucket.HeavyWeapon;
+    public static isWeapon(bucket: Inventory.InventoryBucket): boolean {
+        return bucket == Inventory.InventoryBucket.PrimaryWeapon
+            || bucket == Inventory.InventoryBucket.SpecialWeapon
+            || bucket == Inventory.InventoryBucket.HeavyWeapon;
+    }
+
+    public static isVault(bucket: Inventory.InventoryBucket): boolean {
+        return bucket == Inventory.InventoryBucket.VaultArmor
+            || bucket == Inventory.InventoryBucket.VaultGeneral
+            || bucket == Inventory.InventoryBucket.VaultWeapon;
+    }
+
+    public static getGearBucketForVaultItem(item: Inventory.InventoryItem): Inventory.InventoryBucket {
+        return 0;
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {
@@ -88,8 +132,8 @@ class ParserUtils {
         return this.reverseDictionaryLookup(this.itemTierLookupTable, tier);
     }
 
-    public static stringifyGearBucket(bucket: Inventory.GearBucket): string {
-        return this.reverseDictionaryLookup(this.gearBucketLookupTable, bucket);
+    public static stringifyInventoryBucket(bucket: Inventory.InventoryBucket): string {
+        return this.reverseDictionaryLookup(this.inventoryBucketLookupTable, bucket);
     }
 
     public static stringifyInventoryItemType(itemType: Inventory.InventoryItemType): string {
@@ -98,6 +142,10 @@ class ParserUtils {
 
     public static stringifyDamageType(damageType: Inventory.DamageType): string {
         return this.reverseDictionaryLookup(this.damageTypeLookupTable, damageType);
+    }
+
+    public static findCapacityForBucket(bucket: Inventory.InventoryBucket): number {
+        return this.bucketCapacityLookupTable[this.stringifyInventoryBucket(bucket)];
     }
 
     private static reverseDictionaryLookup(dict: { [key: string]: any }, lookupValue: any): string {
