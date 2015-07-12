@@ -4,6 +4,17 @@
     public type: InventoryItemType;
     public instanceId: string;
     public itemHash: string;
+
+    public static loadFromPlain(plainObj: any): InventoryItem {
+        var newItem = new InventoryItem();
+        newItem.name = plainObj.name;
+        newItem.tier = plainObj.tier;
+        newItem.type = plainObj.type;
+        newItem.instanceId = plainObj.instanceId;
+        newItem.itemHash = plainObj.itemHash;
+
+        return newItem;
+    }
 }
 
 export class StackableItem extends InventoryItem {

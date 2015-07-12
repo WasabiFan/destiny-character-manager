@@ -8,6 +8,10 @@ export class Member {
         this.id = id;
         this.type = type;
     }
+
+    public static loadFromPlain(plainObj: any): Member {
+        return new Member(plainObj.id, plainObj.type);
+    }
 }
 
 export enum MemberType {

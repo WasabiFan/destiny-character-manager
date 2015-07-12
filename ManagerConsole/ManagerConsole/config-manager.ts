@@ -19,17 +19,27 @@ class AppConfiguration {
             var configStr = fs.readFileSync(this.configFilePath);
             var jsonVal = JSON.parse(configStr.toString());
 
-            var newConf = new AppConfiguration();
-            newConf.authCookie = jsonVal.authCookie;
-            newConf.authMember = jsonVal.authMember;
-            newConf.characters = jsonVal.characters;
-            newConf.designatedItems = jsonVal.designatedItems;
-
-            return newConf;
+            return AppConfiguration.loadFromPlain(jsonVal);
         }
         catch (e) {
             return new AppConfiguration();
         }
+    }
+
+    public static loadFromPlain(plainObj: any): AppConfiguration {
+        var newConf = new AppConfiguration();
+        newConf.authCookie = plainObj.authCookie;
+        newConf.authMember = Membership.Member.loadFromPlain(plainObj.authMember);
+
+        newConf.characters = [];
+        for (var i in plainObj.characters)
+            newConf.characters[i] = Character.AliasedCharacter.loadFromPlain(plainObj.characters[i]);
+
+        newConf.designatedItems = [];
+        for (var i in plainObj.designatedItems)
+            newConf.designatedItems[i] = Inventory.InventoryItem.loadFromPlain(plainObj.designatedItems[i]);
+
+        return newConf;
     }
 
     public save() {
