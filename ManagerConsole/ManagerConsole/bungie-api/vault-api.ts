@@ -36,16 +36,19 @@ class VaultApi {
         switch (itemCheerio.parent().prev().text()) {
             case 'Stored Weapons':
                 newItem = new Inventory.WeaponItem();
+                newItem.bucket = Inventory.InventoryBucket.VaultWeapon;
+
                 (<Inventory.WeaponItem> newItem).damageType = ParserUtils.parseDamageType(itemCheerio.data('damagetype'));
             case 'Stored Armor':
                 if (newItem == undefined)
                     newItem = new Inventory.GearItem();
 
-                (<Inventory.GearItem> newItem).bucket = Inventory.GearBucket.Unknown;
+                newItem.bucket = Inventory.InventoryBucket.VaultArmor;
                 (<Inventory.GearItem> newItem).isEquipped = false;
                 break;
             case 'General':
                 newItem = new Inventory.StackableItem();
+                newItem.bucket = Inventory.InventoryBucket.VaultGeneral;
                 (<Inventory.StackableItem> newItem).stackSize = parseInt(itemCheerio.data('stacksize'));
                 break;
         }

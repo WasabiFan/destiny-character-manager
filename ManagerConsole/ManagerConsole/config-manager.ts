@@ -10,6 +10,8 @@ class AppConfiguration {
 
     public authCookie: string;
     public authMember: Membership.Member;
+    public apiKey: string;
+    public csrf: string;
 
     public characters: Character.AliasedCharacter[] = [];
     public designatedItems: Inventory.InventoryItem[] = [];
@@ -30,6 +32,8 @@ class AppConfiguration {
         var newConf = new AppConfiguration();
         newConf.authCookie = plainObj.authCookie;
         newConf.authMember = Membership.Member.loadFromPlain(plainObj.authMember);
+        newConf.apiKey = plainObj.apiKey;
+        newConf.csrf = plainObj.csrf;
 
         newConf.characters = [];
         for (var i in plainObj.characters)

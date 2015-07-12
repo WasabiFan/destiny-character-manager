@@ -19,8 +19,8 @@ class GearApi {
                 $('.bucket').each((i, bucketElem) => {
                     var bucketCheerio = $(bucketElem);
 
-                    var currentBucket = ParserUtils.parseGearBucket(bucketCheerio.data('bucketid'));
-                    var currentBucketName = ParserUtils.stringifyGearBucket(currentBucket);
+                    var currentBucket = ParserUtils.parseInventoryBucket(bucketCheerio.data('bucketid'));
+                    var currentBucketName = ParserUtils.stringifyInventoryBucket(currentBucket);
 
                     bucketCheerio.find('.bucketItem').each((i, itemElem) => {
                         var itemCheerio = $(itemElem);
@@ -36,7 +36,7 @@ class GearApi {
         return promise;
     }
 
-    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.GearBucket): Inventory.GearItem {
+    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket): Inventory.GearItem {
         var item: Inventory.GearItem = new Inventory.GearItem();
 
         if (ParserUtils.isWeapon(currentBucket)) {
