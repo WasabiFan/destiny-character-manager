@@ -15,6 +15,10 @@
 
         return newItem;
     }
+
+    public getIsEquipped(): boolean {
+        // TODO
+    }
 }
 
 export class StackableItem extends InventoryItem {
