@@ -182,7 +182,26 @@ class ParserUtils {
     }
 
     public static getVaultBucketFromGearBucket(bucket: Inventory.InventoryBucket): Inventory.InventoryBucket {
-        // TODO
+        switch (bucket) {
+            case Inventory.InventoryBucket.PrimaryWeapon:
+            case Inventory.InventoryBucket.SpecialWeapon:
+            case Inventory.InventoryBucket.HeavyWeapon:
+                return Inventory.InventoryBucket.VaultWeapon;
+            case Inventory.InventoryBucket.Helmet:
+            case Inventory.InventoryBucket.Gauntlets:
+            case Inventory.InventoryBucket.ChestArmor:
+            case Inventory.InventoryBucket.LegArmor:
+            case Inventory.InventoryBucket.ClassItem:
+                return Inventory.InventoryBucket.VaultArmor;
+            case Inventory.InventoryBucket.GhostShell:
+            case Inventory.InventoryBucket.Vehicle:
+            case Inventory.InventoryBucket.Ship:
+            case Inventory.InventoryBucket.ArmorShader:
+            case Inventory.InventoryBucket.Emblem:
+            case Inventory.InventoryBucket.Consumables:
+            case Inventory.InventoryBucket.Materials:
+                return Inventory.InventoryBucket.VaultGeneral;
+        }
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {
