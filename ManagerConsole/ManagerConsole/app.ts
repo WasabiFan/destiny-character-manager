@@ -36,12 +36,12 @@ var queue = new ManagementQueue.InventoryManagementQueue();
 queue.loadState().then(function (a) {
     var state = queue.getCurrentState();
 
-    queue.addMoveOperationToQueue(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.addMoveOperationToQueue(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    queue.addMoveOperationToQueue(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.addMoveOperationToQueue(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    queue.addMoveOperationToQueue(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.addMoveOperationToQueue(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
 }, function (a) {
         console.log('fuck' + a);
 });

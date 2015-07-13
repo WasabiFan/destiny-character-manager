@@ -115,9 +115,71 @@ class ParserUtils {
             || bucket == Inventory.InventoryBucket.VaultWeapon;
     }
 
+    private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
+        switch (type) {
+            case Inventory.InventoryItemType.TitanMark:
+            case Inventory.InventoryItemType.HunterCloak:
+            case Inventory.InventoryItemType.WarlockSubclass:
+                return Inventory.InventoryBucket.Subclass;
+            case Inventory.InventoryItemType.Consumable:
+                return Inventory.InventoryBucket.Consumables;
+            case Inventory.InventoryItemType.Material:
+            case Inventory.InventoryItemType.Currency:
+                return Inventory.InventoryBucket.Materials;
+            case Inventory.InventoryItemType.AutoRifle:
+            case Inventory.InventoryItemType.ScoutRifle:
+            case Inventory.InventoryItemType.HandCannon:
+            case Inventory.InventoryItemType.PulseRifle:
+                return Inventory.InventoryBucket.PrimaryWeapon;
+            case Inventory.InventoryItemType.Shotgun:
+            case Inventory.InventoryItemType.FusionRifle:
+            case Inventory.InventoryItemType.SniperRifle:
+                return Inventory.InventoryBucket.SpecialWeapon;
+            case Inventory.InventoryItemType.MachineGun:
+            case Inventory.InventoryItemType.RocketLauncher:
+                return Inventory.InventoryBucket.HeavyWeapon;
+            case Inventory.InventoryItemType.Helmet:
+                return Inventory.InventoryBucket.Helmet;
+            case Inventory.InventoryItemType.Gauntlets:
+                return Inventory.InventoryBucket.Gauntlets;
+            case Inventory.InventoryItemType.ChestArmor:
+                return Inventory.InventoryBucket.ChestArmor;
+            case Inventory.InventoryItemType.LegArmor:
+                return Inventory.InventoryBucket.LegArmor;
+            case Inventory.InventoryItemType.WarlockBond:
+            case Inventory.InventoryItemType.HunterCloak:
+            case Inventory.InventoryItemType.TitanMark:
+                return Inventory.InventoryBucket.ClassItem;
+            case Inventory.InventoryItemType.GhostShell:
+                return Inventory.InventoryBucket.GhostShell;
+            case Inventory.InventoryItemType.Vehicle:
+                return Inventory.InventoryBucket.Vehicle;
+            case Inventory.InventoryItemType.Ship:
+                return Inventory.InventoryBucket.Ship;
+            case Inventory.InventoryItemType.ArmorShader:
+                return Inventory.InventoryBucket.ArmorShader;
+            case Inventory.InventoryItemType.Emblem:
+                return Inventory.InventoryBucket.Emblem;
+
+            default:
+                return Inventory.InventoryBucket.Unknown;
+        }
+    }
+
     public static getGearBucketForVaultItem(item: Inventory.InventoryItem): Inventory.InventoryBucket {
-        // TODO
-        return 0;
+        // Non-standard weapons
+        switch (item.itemHash) {
+            // Universal Remote
+            case '1389842217':
+            // No Land Beyond
+            case '2681212685':
+            // Vex Mythoclast
+            case '346443849':
+                return Inventory.InventoryBucket.PrimaryWeapon;
+        }
+
+        return this.getGearBucketForItemType(item.type);
+
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {

@@ -18,8 +18,10 @@
     }
 
     public getIsEquipped(): boolean {
-        // TODO
-        return false;
+        if ((<GearItem>this).isEquipped != undefined)
+            return (<GearItem>this).isEquipped;
+
+        return null;
     }
 }
 
