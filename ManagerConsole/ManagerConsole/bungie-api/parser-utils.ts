@@ -179,7 +179,10 @@ class ParserUtils {
         }
 
         return this.getGearBucketForItemType(item.type);
+    }
 
+    public static getVaultBucketFromGearBucket(bucket: Inventory.InventoryBucket): Inventory.InventoryBucket {
+        // TODO
     }
 
     public static parseInventoryItemType(typeString: string): Inventory.InventoryItemType {
