@@ -8,6 +8,38 @@ import ManagementQueue = require('./inventory-management-queue');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 
 export class DestinyCommandConsole {
+    private bucketFilterStrs = {
+        'primary': Inventory.InventoryBucket.PrimaryWeapon,
+        'pri': Inventory.InventoryBucket.PrimaryWeapon,
+        'p': Inventory.InventoryBucket.PrimaryWeapon,
+        'special': Inventory.InventoryBucket.SpecialWeapon,
+        'spec': Inventory.InventoryBucket.SpecialWeapon,
+        's': Inventory.InventoryBucket.SpecialWeapon,
+        'secondary': Inventory.InventoryBucket.SpecialWeapon,
+        'heavy': Inventory.InventoryBucket.HeavyWeapon,
+        'h': Inventory.InventoryBucket.HeavyWeapon,
+    };
+
+    private tierFilterStrs = {
+        'common': Inventory.InventoryItemTier.Common,
+        'c': Inventory.InventoryItemTier.Common,
+        'uncommon': Inventory.InventoryItemTier.Uncommon,
+        'unc': Inventory.InventoryItemTier.Uncommon,
+        'u': Inventory.InventoryItemTier.Uncommon,
+        'rare': Inventory.InventoryItemTier.Rare,
+        'r': Inventory.InventoryItemTier.Rare,
+        'legendary': Inventory.InventoryItemTier.Legendary,
+        'l': Inventory.InventoryItemTier.Legendary,
+        'exotic': Inventory.InventoryItemTier.Exotic,
+        'ex': Inventory.InventoryItemTier.Exotic,
+        'e': Inventory.InventoryItemTier.Exotic,
+    };
+
+    private quantifierFilterStrs = {
+        '+': FilterQuantifier.AndHigher,
+        '-': FilterQuantifier.AndLower
+    }
+
     private console: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
     private inventoryManager: ManagementQueue.InventoryManagementQueue;
@@ -46,38 +78,6 @@ export class DestinyCommandConsole {
     }
 
     private listAction(fullArgs: string) {
-    }
-
-    private bucketFilterStrs = {
-        'primary': Inventory.InventoryBucket.PrimaryWeapon,
-        'pri': Inventory.InventoryBucket.PrimaryWeapon,
-        'p': Inventory.InventoryBucket.PrimaryWeapon,
-        'special': Inventory.InventoryBucket.SpecialWeapon,
-        'spec': Inventory.InventoryBucket.SpecialWeapon,
-        's': Inventory.InventoryBucket.SpecialWeapon,
-        'secondary': Inventory.InventoryBucket.SpecialWeapon,
-        'heavy': Inventory.InventoryBucket.HeavyWeapon,
-        'h': Inventory.InventoryBucket.HeavyWeapon,
-    };
-
-    private tierFilterStrs = {
-        'common': Inventory.InventoryItemTier.Common,
-        'c': Inventory.InventoryItemTier.Common,
-        'uncommon': Inventory.InventoryItemTier.Uncommon,
-        'unc': Inventory.InventoryItemTier.Uncommon,
-        'u': Inventory.InventoryItemTier.Uncommon,
-        'rare': Inventory.InventoryItemTier.Rare,
-        'r': Inventory.InventoryItemTier.Rare,
-        'legendary': Inventory.InventoryItemTier.Legendary,
-        'l': Inventory.InventoryItemTier.Legendary,
-        'exotic': Inventory.InventoryItemTier.Exotic,
-        'ex': Inventory.InventoryItemTier.Exotic,
-        'e': Inventory.InventoryItemTier.Exotic,
-    };
-
-    private quantifierFilterStrs = {
-        '+': FilterQuantifier.AndHigher,
-        '-': FilterQuantifier.AndLower
     }
 
     private filterItems(filterStr: string, baseFilter: (item: Inventory.InventoryItem) => boolean) {
