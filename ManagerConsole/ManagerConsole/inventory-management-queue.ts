@@ -52,9 +52,9 @@ export class InventoryManagementQueue {
         return characterInventory;
     }
 
-    private getBucketStatesFromBuckets(buckets: BucketGearCollection, parent?: Character.Character): InventoryBucketState[] {
+    private getBucketStatesFromBuckets(buckets: BucketGearCollection, parent?: Character.Character): { [bucket: number]: InventoryBucketState } {
         var bucketMap = buckets.getBucketMap();
-        var result: InventoryBucketState[] = [];
+        var result: { [bucket: number]: InventoryBucketState } = {};
 
         for (var bucketId in bucketMap) {
             var newBucket = new InventoryBucketState();
@@ -66,7 +66,7 @@ export class InventoryManagementQueue {
                 newBucket.contents.push(bucketMap[bucketId][gearIndex]);
             }
 
-            result.push(newBucket);
+            result[Number(bucketId)] = newBucket;
         }
 
         return result;
@@ -154,12 +154,12 @@ export class InventoryState {
 }
 
 export class CharacterInventoryState {
-    public buckets: InventoryBucketState[] = [];
+    public buckets: { [bucket: number]: InventoryBucketState } = {};
     public character: Character.Character;
 }
 
 export class VaultInventoryState {
-    public buckets: InventoryBucketState[] = [];
+    public buckets: { [bucket: number]: InventoryBucketState } = {};
 }
 
 export class InventoryBucketState {
