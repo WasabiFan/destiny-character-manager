@@ -97,7 +97,18 @@ export class InventoryManagementQueue {
     }
 
     public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem) {
+        var newOperation: QueuedOperation = new QueuedOperation();
+        newOperation.type = QueuedOperationType.EquipItem;
+        newOperation.requiresAuth = true;
 
+        newOperation.operationParams = {
+            membershipType: Configuration.currentConfig.authMember.type,
+            characterId: character.character.id,
+            itemId: item.instanceId
+        };
+
+        this.operationQueue.push(newOperation);
+        this.processQueueAddition(newOperation);
     }
 
     private processQueueAddition(newOperation: QueuedOperation) {
@@ -124,6 +135,9 @@ export class InventoryManagementQueue {
         switch (operation.type) {
             case QueuedOperationType.MoveItem:
                 destinyApiFunction = (<(opts: any, auth: any) => Promise<any>>destiny.TransferItem);
+                break;
+            case QueuedOperationType.EquipItem:
+                destinyApiFunction = (<(opts: any, auth: any) => Promise<any>>destiny.Equip);
                 break;
         }
 
@@ -157,7 +171,8 @@ export class InventoryBucketState {
 }
 
 export enum QueuedOperationType {
-    MoveItem
+    MoveItem,
+    EquipItem
 }
 
 export class QueuedOperation {
