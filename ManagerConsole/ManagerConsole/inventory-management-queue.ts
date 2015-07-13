@@ -21,7 +21,9 @@ export class InventoryManagementQueue {
             var promise = new Promise((resolve, reject) => {
                 // TODO: inventory
                 Gear.getItems(Configuration.currentConfig.characters[characterIndex]).then(buckets => {
-                    workingState.characters.push(this.getCharacterFromBuckets(buckets, Configuration.currentConfig.characters[characterIndex]));
+                    var currentCharacterData = Configuration.currentConfig.characters[characterIndex];
+                    workingState.characters[currentCharacterData.id] = this.getCharacterFromBuckets(buckets, currentCharacterData);
+
                     resolve();
                 });
             });
@@ -76,13 +78,46 @@ export class InventoryManagementQueue {
         return this.workingState;
     }
 
-    public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
+    public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem): boolean {
+
+        // Get the two involved buckets by item's bucket type
+        var characterBucket = this.workingState.characters[character.character.id].buckets[item.bucket];
+        var vaultBucket = this.workingState.vault.buckets[item.bucket];
+
+        // Figure out which bucket is source and which is target
+        var toBucket = toVault ? vaultBucket : characterBucket;
+        var fromBucket = toVault ? characterBucket : vaultBucket;
+
+        // Bail if making the move would overflow capacity
+        if (toBucket.contents.length + 1 > toBucket.capacity)
+            return false;
+
+        // The API will refuse to move an equipped item
+        if (item.getIsEquipped() == true)
+            return false;
+
+        // Find the index of the target item in the source bucket
+        var sourceIndex = null;
+        for (var i = 0; i < fromBucket.contents.length; i++) {
+            if (fromBucket.contents[sourceIndex].instanceId == item.instanceId) {
+                sourceIndex = i;
+                break;
+            }
+        }
+
+        // Bail if we couldn't find the source item
+        if (sourceIndex == null)
+            return false;
+
+        // Create the new operation and assign some basic info
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.MoveItem;
         newOperation.requiresAuth = true;
 
+        // Get the stack size from the item if it's available
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
 
+        // Get all the API params
         newOperation.operationParams = {
             membershipType: Configuration.currentConfig.authMember.type,
             characterId: character.character.id,
@@ -92,23 +127,63 @@ export class InventoryManagementQueue {
             transferToVault: toVault
         };
 
+        // Push the operation to the queue (currently unused)
         this.operationQueue.push(newOperation);
+
+        // Register this operation to happen after the previous one completes
         this.processQueueAddition(newOperation);
+
+        // Update the local working state to reflect the change
+        toBucket.contents.push(fromBucket.contents.splice(sourceIndex, 1)[0]);
+
+        // We have queued the request, return a success
+        return true;
     }
 
-    public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem) {
+    public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem): boolean {
+        // Get the bucket that we're swapping
+        var characterBucket = this.workingState.characters[character.character.id].buckets[item.bucket];
+
+        // Find the currently equipped item
+        var currentlyEquipped: Inventory.InventoryItem = null;
+        for (var i in characterBucket.contents)
+            if (characterBucket.contents[i].getIsEquipped() == true)
+                currentlyEquipped = characterBucket.contents[i];
+
+        // Find the target item
+        var targetItem: Inventory.InventoryItem = null;
+        for (var i in characterBucket.contents)
+            if (characterBucket.contents[i].instanceId == item.instanceId)
+                targetItem = characterBucket.contents[i];
+
+        // If we couldn't find an equipped item, something went horribly wrong
+        if (currentlyEquipped == null)
+            return false;
+
+        // Create the new operation and set basic config
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.EquipItem;
         newOperation.requiresAuth = true;
 
+        // Set the operation-specific params
         newOperation.operationParams = {
             membershipType: Configuration.currentConfig.authMember.type,
             characterId: character.character.id,
             itemId: item.instanceId
         };
 
+        // Push new operation to the queue (currently unused)
         this.operationQueue.push(newOperation);
+
+        // Register the new operation to happen after the previous one completes
         this.processQueueAddition(newOperation);
+
+        // Swap the equipped weapon in the working state
+        (<Inventory.GearItem>currentlyEquipped).isEquipped = false;
+        (<Inventory.GearItem>targetItem).isEquipped = true;
+
+        // We got to the end -- return success
+        return true;
     }
 
     private processQueueAddition(newOperation: QueuedOperation) {
@@ -149,7 +224,7 @@ export class InventoryManagementQueue {
 }
 
 export class InventoryState {
-    public characters: CharacterInventoryState[] = [];
+    public characters: { [characterId: string]: CharacterInventoryState } = {};
     public vault: VaultInventoryState;
 }
 

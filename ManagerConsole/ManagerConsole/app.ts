@@ -3,6 +3,7 @@
 import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
 import Inventory = require('./bungie-api/api-objects/inventory');
+import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
 import ManagementQueue = require('./inventory-management-queue');
@@ -36,12 +37,20 @@ var queue = new ManagementQueue.InventoryManagementQueue();
 queue.loadState().then(function (a) {
     var state = queue.getCurrentState();
 
-    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    var targetCharacter: ManagementQueue.CharacterInventoryState;
+    for (var i in state.characters) {
+        if (state.characters[i].character.characterClass == Character.CharacterClass.Warlock)
+            targetCharacter = state.characters[i];
+    }
+
+    queue.enqueueEquipOperation(targetCharacter, Configuration.currentConfig.designatedItems[0]);
+
+    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
+    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
+    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
 }, function (a) {
-        console.log('fuck' + a);
+        console.log('Error thrown while loading queue! ' + a);
 });

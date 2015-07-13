@@ -13,6 +13,7 @@
         newItem.type = plainObj.type;
         newItem.instanceId = plainObj.instanceId;
         newItem.itemHash = plainObj.itemHash;
+        newItem.bucket = plainObj.bucket;
 
         return newItem;
     }
