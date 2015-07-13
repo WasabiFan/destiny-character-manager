@@ -8,6 +8,7 @@ import Configuration = require('./config-manager');
 import Console = require('./command-console');
 import ManagementQueue = require('./inventory-management-queue');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
+import Commands = require('./destiny-commands');
 
 //Vault.getItems(function (items) {
 //    console.log(items);
@@ -20,7 +21,10 @@ import InventoryItemTransferManager = require('./inventory-item-transfer-manager
 Configuration.currentConfig.save();
 console.log('Saved configuration');
 
-InventoryItemTransferManager.transferDesignatedItems(Configuration.currentConfig.characters[0]);
+//InventoryItemTransferManager.transferDesignatedItems(Configuration.currentConfig.characters[0]);
+
+var cmdConsole = new Commands.DestinyCommandConsole();
+cmdConsole.start();
 
 //var consoleConfig = new Console.CommandConsoleOptions();
 
