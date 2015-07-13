@@ -20,7 +20,7 @@ import InventoryItemTransferManager = require('./inventory-item-transfer-manager
 Configuration.currentConfig.save();
 console.log('Saved configuration');
 
-InventoryItemTransferManager.StartItemTransfer(Configuration.currentConfig.characters[0]);
+InventoryItemTransferManager.transferDesignatedItems(Configuration.currentConfig.characters[0]);
 
 //var consoleConfig = new Console.CommandConsoleOptions();
 

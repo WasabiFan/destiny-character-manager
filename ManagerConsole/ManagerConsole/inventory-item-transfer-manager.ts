@@ -10,8 +10,8 @@ import Queue = require('./inventory-management-queue');
 import ParserUtils = require('./bungie-api/parser-utils');
 var destiny = require('destiny-client')();
 
-class inventoryItemTrasferManager {
-    private static IntersectArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
+class InventoryItemTransferManager {
+    private static intersectArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
         var arr, i, id, j, len, len1, name, obj, objectsById, ref;
         objectsById = {};
         for (i = 0, len = arrays.length; i < len; i++) {
@@ -21,7 +21,7 @@ class inventoryItemTrasferManager {
                 (objectsById[name = obj[uniqueIdentifierAttributeName]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref, (function () {
+        return (ref = []).concat.apply(ref,(function () {
             var results;
             results = [];
             for (id in objectsById) {
@@ -34,7 +34,7 @@ class inventoryItemTrasferManager {
         })());
     }
 
-    private static DiffArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
+    private static diffArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
         var arr, i, id, j, len, len1, name, obj, objectsById, ref;
         objectsById = {};
         for (i = 0, len = arrays.length; i < len; i++) {
@@ -44,7 +44,7 @@ class inventoryItemTrasferManager {
                 (objectsById[name = obj[uniqueIdentifierAttributeName]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref, (function () {
+        return (ref = []).concat.apply(ref,(function () {
             var results;
             results = [];
             for (id in objectsById) {
@@ -57,7 +57,7 @@ class inventoryItemTrasferManager {
         })());
     }
 
-    private static TempItemFinder(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[]) {
+    private static findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[]) {
         var checkAttributeNames = ['instanceId'];
         if (lookupBucketContents.length > 0 && ParserUtils.getVaultBucketFromGearBucket(lookupBucketContents[0].bucket) == Inventory.InventoryBucket.VaultGeneral)
             checkAttributeNames.push('itemHash');
@@ -74,7 +74,7 @@ class inventoryItemTrasferManager {
                     (objectsById[name = obj[checkAttributeNames.join('')]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref, (function () {
+        return (ref = []).concat.apply(ref,(function () {
             var results;
             results = [];
             for (id in objectsById) {
@@ -118,11 +118,11 @@ class inventoryItemTrasferManager {
         return { charactersFull: areCharactersFull, charsFull: charsFull, targetFull: charsFull[characters[targetCharacterIndex].id], vaultFull: vaultFull, vaultEmpty: vaultEmpty, nonTargetsFull: nonTargetsFull, nonFullNonTargetIndex: nonFullNonTargetIndex };
     }
 
-    private static MoveAnyItemFromVault(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[], exclude: string[]) {
+    private static moveAnyItemFromVault(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[], exclude: string[]) {
         var state = queue.getCurrentState();
         var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
-        var intersection: Inventory.InventoryItem[] = this.IntersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, designatedItems);
-        var diff: Inventory.InventoryItem[] = this.TempItemFinder(state.vault.buckets[vaultBucketIndex].contents, designatedItems);
+        var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, designatedItems);
+        var diff: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[vaultBucketIndex].contents, designatedItems);
         // TODO: When inventory works on characters, we can do this
         for (var i = 0; i < diff.length; i++) {
             if (diff[i].bucket == Inventory.InventoryBucket.Consumables ||
@@ -177,11 +177,12 @@ class inventoryItemTrasferManager {
         }
         return -1;
     }
-    private static PrepForTransfer(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+
+    private static prepForTransfer(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
         var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
         if (fullInfo.vaultFull) {
-            if (this.MoveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1) {
+            if (this.moveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1) {
                 console.error('No space is availible in inventory or vault to effect transfer');
                 return;
             }
@@ -189,7 +190,7 @@ class inventoryItemTrasferManager {
         state = queue.getCurrentState();
         fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
         var targetBucket = state.characters[targetIndex].buckets[bucketIndex];
-        var intersection: Inventory.InventoryItem[] = this.IntersectArraysOfObjects('instanceId', targetBucket.contents, designatedItems);
+        var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', targetBucket.contents, designatedItems);
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == false) {
                 queue.enqueueEquipOperation(state.characters[targetIndex], intersection[i]);
@@ -198,49 +199,49 @@ class inventoryItemTrasferManager {
         }
     }
 
-    private static MoveUnequippedItems(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+    private static moveUnequippedItems(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
         var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
-        var items: { item: Inventory.GearItem, char: number }[] = [];
+        var items: { item: Inventory.GearItem; char: number }[] = [];
         for (var i = 0; i < characters.length; i++) {
             if (characters[i].id == target.id)
                 continue;
-            var intersection: Inventory.GearItem[] = this.IntersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
+            var intersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
             for (var j = 0; j < intersection.length; j++)
                 if (!intersection[j].isEquipped)
                     items.push({ item: intersection[j], char: i });
         }
-        var vaultIntersection: Inventory.GearItem[] = this.IntersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
+        var vaultIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
         for (var i = 0; i < vaultIntersection.length; i++)
             if (!vaultIntersection[i].isEquipped)
                 items.push({ item: vaultIntersection[j], char: -1 });
         for (var i = 0; i < items.length; i++) {
-            var targetIntersection: Inventory.GearItem[] = this.IntersectArraysOfObjects('instanceId', state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
+            var targetIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
             if (targetIntersection.length > 8)
-                this.EquipDesignatedItem(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.equipDesignatedItem(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
             var isInVault = items[i].char == -1;
             state = queue.getCurrentState();
             fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
             if (fullInfo.targetFull) {
                 if (!isInVault)
                     queue.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
-                this.MoveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, [items[i].item.instanceId]);
-                var temps: Inventory.InventoryItem[] = this.TempItemFinder(state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
+                this.moveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, [items[i].item.instanceId]);
+                var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
                 queue.enqueueMoveOperation(state.characters[targetIndex], true, temps[0]);
                 queue.enqueueMoveOperation(state.characters[targetIndex], false, items[i].item);
             }
             else {
-                if(!isInVault)
+                if (!isInVault)
                     queue.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
                 queue.enqueueMoveOperation(state.characters[targetIndex], false, items[i].item);
             }
         }
     }
 
-    private static EquipDesignatedItem(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+    private static equipDesignatedItem(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
         var bucket = state.characters[targetIndex].buckets[bucketIndex];
-        var intersection: Inventory.InventoryItem[] = this.IntersectArraysOfObjects('instanceId', bucket.contents, designatedItems);
+        var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', bucket.contents, designatedItems);
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == true)
                 return;
@@ -251,13 +252,13 @@ class inventoryItemTrasferManager {
         }
     }
 
-    private static MoveEquippedItems(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+    private static moveEquippedItems(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
-        var items: { item: Inventory.GearItem, char: string }[] = [];
+        var items: { item: Inventory.GearItem; char: string }[] = [];
         for (var i = 0; i < characters.length; i++) {
             if (characters[i].id == target.id)
                 continue;
-            var inventoriedItems: Inventory.GearItem[] = this.IntersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
+            var inventoriedItems: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
             for (var j = 0; j < inventoriedItems.length; j++) {
                 if (inventoriedItems[j].getIsEquipped() == true) {
                     items.push({ item: inventoriedItems[j], char: characters[i].id });
@@ -268,14 +269,14 @@ class inventoryItemTrasferManager {
             state = queue.getCurrentState();
             var toEquip: Inventory.InventoryItem;
             if (state.characters[items[i].char].buckets[bucketIndex].contents.length == 1) {
-                var vaultTemps: Inventory.InventoryItem[] = this.TempItemFinder(state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
+                var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
                 var vaultTemp;
                 if (vaultTemps.length > 0) {
                     vaultTemp = vaultTemps[0];
                 }
                 else {
                     for (var j = 0; j < characters.length; j++) {
-                        var temps: Inventory.InventoryItem[] = this.TempItemFinder(state.characters[j].buckets[bucketIndex].contents, designatedItems);
+                        var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[j].buckets[bucketIndex].contents, designatedItems);
                         if (temps.length > 0) {
                             queue.enqueueMoveOperation(state.characters[j], true, temps[0]);
                             vaultTemp = temps[0]
@@ -294,20 +295,20 @@ class inventoryItemTrasferManager {
             }
             queue.enqueueEquipOperation(state.characters[items[i].char], toEquip);
         }
-        this.MoveUnequippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+        this.moveUnequippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
     }
 
-    private static MoveTargetTemps(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+    private static moveTargetTemps(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
         var targetBucket = state.characters[targetIndex].buckets[bucketIndex];
-        var temps: Inventory.InventoryItem[] = this.TempItemFinder(targetBucket.contents, designatedItems);
+        var temps: Inventory.InventoryItem[] = this.findTempItems(targetBucket.contents, designatedItems);
         for (var i = 0; i < temps.length; i++) {
             state = queue.getCurrentState();
             if (temps[i].getIsEquipped() == true)
                 continue;
             var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
             if (fullInfo.vaultFull && !fullInfo.nonTargetsFull) {
-                if (this.MoveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1)
+                if (this.moveAnyItemFromVault(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1)
                     continue;
             }
             else if (fullInfo.vaultFull && fullInfo.nonTargetsFull)
@@ -316,7 +317,7 @@ class inventoryItemTrasferManager {
         }
     }
 
-    public static StartItemTransfer(target: Character.Character) {
+    public static transferDesignatedItems(target: Character.Character) {
         var queue = new Queue.InventoryManagementQueue();
         queue.loadState().then(() => {
             var state = queue.getCurrentState();
@@ -333,11 +334,11 @@ class inventoryItemTrasferManager {
                     if (designatedItems[j].bucket == bucketIndex)
                         bucketDesignatedItems.push(designatedItems[j]);
                 var vaultBucketIndex = ParserUtils.getVaultBucketFromGearBucket(bucketIndex);
-                this.PrepForTransfer(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.MoveUnequippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.EquipDesignatedItem(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.MoveEquippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.MoveTargetTemps(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.prepForTransfer(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.moveUnequippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.equipDesignatedItem(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.moveEquippedItems(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.moveTargetTemps(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
             }
         }).catch((err) => {
             console.error(err);
@@ -345,4 +346,4 @@ class inventoryItemTrasferManager {
     }
 };
 
-export = inventoryItemTrasferManager;
+export = InventoryItemTransferManager;
