@@ -7,6 +7,7 @@ import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
 import ManagementQueue = require('./inventory-management-queue');
+import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 
 //Vault.getItems(function (items) {
 //    console.log(items);
@@ -19,38 +20,41 @@ import ManagementQueue = require('./inventory-management-queue');
 Configuration.currentConfig.save();
 console.log('Saved configuration');
 
-var consoleConfig = new Console.CommandConsoleOptions();
+InventoryItemTransferManager.StartItemTransfer(Configuration.currentConfig.characters[0]);
 
-var commandB = new Console.Command('b', (...args: string[]) => {
-    console.log('B command run with args: ' + args);
-});
+//var consoleConfig = new Console.CommandConsoleOptions();
 
-var commandC = new Console.Command('c',(...args: string[]) => {
-    console.log('C command run with args: ' + args);
-});
+//var commandB = new Console.Command('b', (...args: string[]) => {
+//    console.log('B command run with args: ' + args);
+//});
 
-consoleConfig.commandRoot = new Console.Command('a', [commandB, commandC]);
-var cmdConsole = new Console.CommandConsole(consoleConfig);
-cmdConsole.start();
+//var commandC = new Console.Command('c',(...args: string[]) => {
+//    console.log('C command run with args: ' + args);
+//});
 
-var queue = new ManagementQueue.InventoryManagementQueue();
-queue.loadState().then(function (a) {
-    var state = queue.getCurrentState();
+//consoleConfig.commandRoot = new Console.Command('a', [commandB, commandC]);
+//var cmdConsole = new Console.CommandConsole(consoleConfig);
+//cmdConsole.start();
 
-    var targetCharacter: ManagementQueue.CharacterInventoryState;
-    for (var i in state.characters) {
-        if (state.characters[i].character.characterClass == Character.CharacterClass.Warlock)
-            targetCharacter = state.characters[i];
-    }
+//var queue = new ManagementQueue.InventoryManagementQueue();
+//queue.loadState().then(function (a) {
+//    var state = queue.getCurrentState();
 
-    queue.enqueueEquipOperation(targetCharacter, Configuration.currentConfig.designatedItems[0]);
+//    var targetCharacter: ManagementQueue.CharacterInventoryState;
+//    for (var i in state.characters) {
+//        if (state.characters[i].character.characterClass == Character.CharacterClass.Warlock)
+//            targetCharacter = state.characters[i];
+//    }
 
-    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-    //queue.enqueueMoveOperation(state.characters[2], true, Configuration.currentConfig.designatedItems[0]);
-    //queue.enqueueMoveOperation(state.characters[2], false, Configuration.currentConfig.designatedItems[0]);
-}, function (a) {
-        console.log('Error thrown while loading queue! ' + a);
-});
+//    //queue.enqueueEquipOperation(targetCharacter, Configuration.currentConfig.designatedItems[0]);
+
+//    queue.enqueueMoveOperation(targetCharacter, true, Configuration.currentConfig.designatedItems[0]);
+//    queue.enqueueMoveOperation(targetCharacter, false, Configuration.currentConfig.designatedItems[0]);
+//    queue.enqueueMoveOperation(targetCharacter, true, Configuration.currentConfig.designatedItems[0]);
+//    queue.enqueueMoveOperation(targetCharacter, false, Configuration.currentConfig.designatedItems[0]);
+//    queue.enqueueMoveOperation(targetCharacter, true, Configuration.currentConfig.designatedItems[0]);
+//    queue.enqueueMoveOperation(targetCharacter, false, Configuration.currentConfig.designatedItems[0]);
+//}, function (a) {
+//        console.log('Error thrown while loading queue! ' + a);
+//});
+setInterval(() => { }, 500000);

@@ -44,6 +44,7 @@
     <TypeScriptCompile Include="bungie-api\api-objects\inventory.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
     <TypeScriptCompile Include="bungie-api\parser-utils.ts" />
+    <TypeScriptCompile Include="inventory-item-transfer-manager.ts" />
     <TypeScriptCompile Include="inventory-management-queue.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\es6-promise\es6-promise.d.ts" />

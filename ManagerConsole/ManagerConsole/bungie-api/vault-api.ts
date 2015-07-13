@@ -41,10 +41,11 @@ class VaultApi {
 
                 (<Inventory.WeaponItem> newItem).damageType = ParserUtils.parseDamageType(itemCheerio.data('damagetype'));
             case 'Stored Armor':
-                if (newItem == undefined)
+                if (newItem == undefined) {
                     newItem = new Inventory.GearItem();
+                    newItem.bucket = Inventory.InventoryBucket.VaultArmor;
+                }
 
-                newItem.bucket = Inventory.InventoryBucket.VaultArmor;
                 (<Inventory.GearItem> newItem).isEquipped = false;
                 break;
             case 'General':

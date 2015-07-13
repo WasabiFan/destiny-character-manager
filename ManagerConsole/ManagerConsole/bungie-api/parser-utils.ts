@@ -167,6 +167,9 @@ class ParserUtils {
     }
 
     public static getGearBucketForVaultItem(item: Inventory.InventoryItem): Inventory.InventoryBucket {
+        if (!this.isVault(item.bucket))
+            return item.bucket;
+
         // Non-standard weapons
         switch (item.itemHash) {
             // Universal Remote
@@ -182,7 +185,7 @@ class ParserUtils {
     }
 
     public static getVaultBucketFromGearBucket(bucket: Inventory.InventoryBucket): Inventory.InventoryBucket {
-        switch (bucket) {
+        switch (Number(bucket)) {
             case Inventory.InventoryBucket.PrimaryWeapon:
             case Inventory.InventoryBucket.SpecialWeapon:
             case Inventory.InventoryBucket.HeavyWeapon:
@@ -201,6 +204,14 @@ class ParserUtils {
             case Inventory.InventoryBucket.Consumables:
             case Inventory.InventoryBucket.Materials:
                 return Inventory.InventoryBucket.VaultGeneral;
+            case Inventory.InventoryBucket.VaultArmor:
+                return Inventory.InventoryBucket.VaultArmor;
+            case Inventory.InventoryBucket.VaultWeapon:
+                return Inventory.InventoryBucket.VaultWeapon;
+            case Inventory.InventoryBucket.VaultGeneral:
+                return Inventory.InventoryBucket.VaultGeneral;
+            default:
+                return Inventory.InventoryBucket.Unknown;
         }
     }
 

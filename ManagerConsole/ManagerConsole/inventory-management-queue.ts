@@ -17,18 +17,17 @@ export class InventoryManagementQueue {
         var workingState = this.workingState = new InventoryState();
 
         var promises: Promise<any>[] = [];
-        for (var characterIndex in Configuration.currentConfig.characters) {
+        Configuration.currentConfig.characters.forEach((currentCharacter, characterIndex) => {
             var promise = new Promise((resolve, reject) => {
                 // TODO: inventory
-                Gear.getItems(Configuration.currentConfig.characters[characterIndex]).then(buckets => {
-                    var currentCharacterData = Configuration.currentConfig.characters[characterIndex];
-                    workingState.characters[currentCharacterData.id] = this.getCharacterFromBuckets(buckets, currentCharacterData);
+                Gear.getItems(currentCharacter).then(buckets => {
+                    workingState.characters[currentCharacter.id] = this.getCharacterFromBuckets(buckets, currentCharacter);
 
                     resolve();
                 });
             });
             promises.push(promise);
-        }
+        });
 
         var vaultPromise = new Promise((resolve, reject) => {
             Vault.getItems(Configuration.currentConfig.characters[0]).then(items => {
@@ -81,8 +80,8 @@ export class InventoryManagementQueue {
     public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem): boolean {
 
         // Get the two involved buckets by item's bucket type
-        var characterBucket = this.workingState.characters[character.character.id].buckets[item.bucket];
-        var vaultBucket = this.workingState.vault.buckets[item.bucket];
+        var characterBucket = this.workingState.characters[character.character.id].buckets[ParserUtils.getGearBucketForVaultItem(item)];
+        var vaultBucket = this.workingState.vault.buckets[ParserUtils.getVaultBucketFromGearBucket(item.bucket)];
 
         // Figure out which bucket is source and which is target
         var toBucket = toVault ? vaultBucket : characterBucket;
@@ -99,7 +98,7 @@ export class InventoryManagementQueue {
         // Find the index of the target item in the source bucket
         var sourceIndex = null;
         for (var i = 0; i < fromBucket.contents.length; i++) {
-            if (fromBucket.contents[sourceIndex].instanceId == item.instanceId) {
+            if (fromBucket.contents[i].instanceId == item.instanceId) {
                 sourceIndex = i;
                 break;
             }
@@ -134,13 +133,22 @@ export class InventoryManagementQueue {
         this.processQueueAddition(newOperation);
 
         // Update the local working state to reflect the change
-        toBucket.contents.push(fromBucket.contents.splice(sourceIndex, 1)[0]);
+        var itemFromSource = fromBucket.contents.splice(sourceIndex, 1)[0];
+        if (toVault)
+            itemFromSource.bucket = ParserUtils.getVaultBucketFromGearBucket(itemFromSource.bucket);
+        else
+            itemFromSource.bucket = ParserUtils.getGearBucketForVaultItem(itemFromSource);
+        toBucket.contents.push(itemFromSource);
 
         // We have queued the request, return a success
         return true;
     }
 
     public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem): boolean {
+        // If it's in the vault, we can't equip it
+        if (ParserUtils.isVault(item.bucket))
+            return false;
+
         // Get the bucket that we're swapping
         var characterBucket = this.workingState.characters[character.character.id].buckets[item.bucket];
 
@@ -191,11 +199,14 @@ export class InventoryManagementQueue {
         var newPromise = new Promise((resolve, reject) => {
             var executeAction = () => {
                 this.executeQueuedOperation(newOperation).then(() => {
-                    resolve();
+                    setTimeout(() => {
+                        this.lastQueueOperationPromise = null;
+                        resolve();
+                    }, 1000);
                 });
             }
 
-            if (this.lastQueueOperationPromise == undefined)
+            if (this.lastQueueOperationPromise == undefined || this.lastQueueOperationPromise == null)
                 executeAction();
             else
                 this.lastQueueOperationPromise.then(executeAction);
@@ -216,9 +227,13 @@ export class InventoryManagementQueue {
                 break;
         }
 
-        console.log('Executing operation "' + operation.type.toString() + '" with params: ' + JSON.stringify(operation.operationParams, null, 4)); 
+        console.log('Executing operation "' + operation.type.toString() + '" with params: ' + JSON.stringify(operation.operationParams, null, 4));
 
-        return destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders());
+        return destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders());/*.then(res=> {
+            console.log(res);
+        }).catch(err=> {
+                console.log(err);
+        });*/
 
     }
 }
