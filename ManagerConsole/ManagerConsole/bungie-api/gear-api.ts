@@ -50,6 +50,7 @@ class GearApi {
         item.itemHash = itemCheerio.data('itemhash');
         item.tier = ParserUtils.parseInventoryItemTier(itemCheerio.find('.tierTypeName').text());
         item.bucket = currentBucket;
+        item.type = ParserUtils.parseInventoryItemType(itemCheerio.find('.itemSubtitle').children().first().text());
 
         return item;
     }

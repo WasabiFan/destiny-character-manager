@@ -202,24 +202,23 @@ class InventoryItemTransferManager {
     private static moveUnequippedItems(queue: Queue.InventoryManagementQueue, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
         var state = queue.getCurrentState();
         var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
-        var items: { item: Inventory.GearItem; char: number }[] = [];
+        var items: { item: Inventory.GearItem; char: string }[] = [];
         for (var i = 0; i < characters.length; i++) {
             if (characters[i].id == target.id)
                 continue;
             var intersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
             for (var j = 0; j < intersection.length; j++)
                 if (!intersection[j].isEquipped)
-                    items.push({ item: intersection[j], char: i });
+                    items.push({ item: intersection[j], char: characters[i].id });
         }
         var vaultIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
         for (var i = 0; i < vaultIntersection.length; i++)
-            if (!vaultIntersection[i].isEquipped)
-                items.push({ item: vaultIntersection[j], char: -1 });
+            items.push({ item: vaultIntersection[j], char: "-1" });
         for (var i = 0; i < items.length; i++) {
             var targetIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
             if (targetIntersection.length > 8)
                 this.equipDesignatedItem(queue, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-            var isInVault = items[i].char == -1;
+            var isInVault = items[i].char == "-1";
             state = queue.getCurrentState();
             fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
             if (fullInfo.targetFull) {
@@ -325,8 +324,14 @@ class InventoryItemTransferManager {
             var targetIndex: string = target.id;
             // Find all designated items
             var designatedItems = AppConfiguration.currentConfig.designatedItems;
+            var designatedBuckets = [];
+            for (var i = 0; i < designatedItems.length; i++) {
+                if (designatedBuckets.indexOf(designatedItems[i].bucket) == -1)
+                    designatedBuckets.push(designatedItems[i].bucket);
+            }
             // Loop through buckets
-            for (var bucketIndex in state.characters[targetIndex].buckets) {
+            for (var i = 0; i < designatedBuckets.length; i++) {
+                var bucketIndex = designatedBuckets[i];
                 if (bucketIndex == Inventory.InventoryBucket.GhostShell || bucketIndex == Inventory.InventoryBucket.Subclass)
                     continue;
                 var bucketDesignatedItems: Inventory.InventoryItem[] = [];

@@ -36,6 +36,9 @@ class ParserUtils {
     };
 
     private static itemTypeLookupTable: { [name: string]: Inventory.InventoryItemType } = {
+        'Titan Subclass': Inventory.InventoryItemType.TitanSubclass,
+        'Hunter Subclass': Inventory.InventoryItemType.HunterSubclass,
+        'Warlock Subclass': Inventory.InventoryItemType.WarlockSubclass,
         'Auto Rifle': Inventory.InventoryItemType.AutoRifle,
         'Pulse Rifle': Inventory.InventoryItemType.PulseRifle,
         'Scout Rifle': Inventory.InventoryItemType.ScoutRifle,
@@ -56,6 +59,7 @@ class ParserUtils {
         'Vehicle': Inventory.InventoryItemType.Vehicle,
         'Ship': Inventory.InventoryItemType.Ship,
         'Armor Shader': Inventory.InventoryItemType.ArmorShader,
+        'Restore Defaults': Inventory.InventoryItemType.ArmorShader,
         'Emblem': Inventory.InventoryItemType.Emblem,
         'Consumable': Inventory.InventoryItemType.Consumable,
         'Material': Inventory.InventoryItemType.Material,
