@@ -10,6 +10,7 @@ import Filters = require('./filters');
 import ParserUtils = require('./bungie-api/parser-utils');
 import Table = require('easy-table');
 import Chalk = require('chalk');
+var package = require('./package.json');
 
 export class DestinyCommandConsole {
     private console: Console.CommandConsole;
@@ -20,6 +21,7 @@ export class DestinyCommandConsole {
     constructor() {
         this.consoleOptions = new Console.CommandConsoleOptions();
         this.consoleOptions.commandRoot = new Console.Command(null, [
+            // TODO: Add command to load data from gamertag
             new Console.Command('set', this.setAction.bind(this)),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
@@ -27,14 +29,22 @@ export class DestinyCommandConsole {
             new Console.Command('umark', this.unmarkAction.bind(this)),
             new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
+            new Console.Command('reset', this.resetAction.bind(this))
         ]);
+
+        this.consoleOptions.header = [
+            '---------------------------------------------',
+            'Destiny character management console v' + package.version
+        ];
 
         this.inventoryManager = new InventoryManager.InventoryManager();
         this.transferMan = new InventoryItemTransferManager(this.inventoryManager);
     }
 
     public start() {
+        console.log('Loading inventory data... this could take a few seconds');
         this.inventoryManager.loadState().then(() => {
+            console.log('Inventory data loaded.');
             this.console = new Console.CommandConsole(this.consoleOptions);
             this.console.start();
         });
@@ -47,9 +57,6 @@ export class DestinyCommandConsole {
         switch (propName) {
             case 'cookie':
                 Configuration.currentConfig.authCookie = wholeVal;
-                break;
-            case 'gamertag':
-                // TODO: do lookup
                 break;
         }
     }
@@ -104,6 +111,22 @@ export class DestinyCommandConsole {
         Configuration.currentConfig.save();
     }
 
+    private resetAction(fullArgs: string, target: string) {
+        switch (target) {
+            case 'marks':
+                Configuration.currentConfig.designatedItems.splice(0);
+                break;
+            case 'cookie':
+                Configuration.currentConfig.authCookie = undefined;
+                break;
+            default:
+                console.error('Unknown reset target: ' + target);
+                break;
+        }
+
+        Configuration.currentConfig.save();
+    }
+
     private printItemTable(items: Inventory.InventoryItem[]) {
         var resultTable = new Table();
 
@@ -143,11 +166,10 @@ export class DestinyCommandConsole {
                 chalkify = chalkify[chalkChain[chalkIndex]];
             }
 
-            resultTable.cell('', chalkify('█'));
+            resultTable.cell('', chalkify('█') + (items[i].getIsEquipped() == true ? '>' : ''));
             resultTable.cell('Name', items[i].name);
             resultTable.cell('Tier', Inventory.InventoryItemTier[items[i].tier]);
             resultTable.cell('Type', Inventory.InventoryItemType[items[i].type]);
-            resultTable.cell('Equipped?', items[i].getIsEquipped() == true ? '█' : '');
             // TODO: designated
             resultTable.newRow();
         }
@@ -159,12 +181,15 @@ export class DestinyCommandConsole {
         if (sourceAlias.toLowerCase() === 'vault') {
             return this.inventoryManager.getAllVaultItems();
         }
+        else if (sourceAlias.toLowerCase() === 'marks') {
+            return Configuration.currentConfig.designatedItems;
+        }
 
         var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(sourceAlias);
 
         if (targetCharacter == null)
             return null;
 
-        this.inventoryManager.getAllCharacterItems(targetCharacter)
+        return this.inventoryManager.getAllCharacterItems(targetCharacter)
     }
 }

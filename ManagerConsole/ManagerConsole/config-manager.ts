@@ -66,4 +66,4 @@ class AppConfiguration {
 export = AppConfiguration;
 
 AppConfiguration.currentConfig = AppConfiguration.load();
-console.log('Loaded configuration');
+console.log('Loaded local configuration');

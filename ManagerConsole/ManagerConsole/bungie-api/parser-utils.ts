@@ -46,6 +46,7 @@ class ParserUtils {
         'Shotgun': Inventory.InventoryItemType.Shotgun,
         'Fusion Rifle': Inventory.InventoryItemType.FusionRifle,
         'Sniper Rifle': Inventory.InventoryItemType.SniperRifle,
+        'Sidearm': Inventory.InventoryItemType.Sidearm,
         'Machine Gun': Inventory.InventoryItemType.MachineGun,
         'Rocket Launcher': Inventory.InventoryItemType.RocketLauncher,
         'Helmet': Inventory.InventoryItemType.Helmet,
@@ -138,6 +139,7 @@ class ParserUtils {
             case Inventory.InventoryItemType.Shotgun:
             case Inventory.InventoryItemType.FusionRifle:
             case Inventory.InventoryItemType.SniperRifle:
+            case Inventory.InventoryItemType.Sidearm:
                 return Inventory.InventoryBucket.SpecialWeapon;
             case Inventory.InventoryItemType.MachineGun:
             case Inventory.InventoryItemType.RocketLauncher:

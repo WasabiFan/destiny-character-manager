@@ -8,6 +8,8 @@ export class CommandConsole {
     }
 
     public start() {
+        this.printMultiline(this.options.header);
+
         this.printPrompt();
         process.stdin.addListener('data', data => {
             this.processCommand(data.toString());
@@ -36,16 +38,22 @@ export class CommandConsole {
     private printPrompt() {
         process.stdout.write("\r\n> ");
     }
+
+    private printMultiline(textLines: string[]) {
+        process.stdout.write(textLines.join('\r\n') + '\r\n');
+    }
 }
 
 export class CommandConsoleOptions {
     public commandRoot: Command;
+    public header: string[];
 }
 
 export class Command {
     public name: string;
     public action: (fullArgs: string, ...args: string[]) => void;
     public subcommands: Command[];
+    public helpText: string[];
 
     constructor(name: string, actionInfo: ((fullArgs: string, ...args: string[]) => void) | Command[]) {
         this.name = name;

@@ -102,6 +102,7 @@ export enum InventoryItemType {
     Shotgun,
     FusionRifle,
     SniperRifle,
+    Sidearm,
     MachineGun,
     RocketLauncher,
 

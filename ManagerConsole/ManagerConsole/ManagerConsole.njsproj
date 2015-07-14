@@ -35,8 +35,10 @@
   <ItemGroup>
     <TypeScriptCompile Include="bungie-api\api-core.ts" />
     <TypeScriptCompile Include="app.ts" />
+    <Content Include="..\..\README.md">
+      <Link>README.md</Link>
+    </Content>
     <Content Include="package.json" />
-    <Content Include="README.md" />
     <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
     <TypeScriptCompile Include="config-manager.ts" />
