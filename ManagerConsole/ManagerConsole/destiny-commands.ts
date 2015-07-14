@@ -14,6 +14,7 @@ export class DestinyCommandConsole {
     private console: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
     private inventoryManager: InventoryManager.InventoryManager;
+    private transferMan: InventoryItemTransferManager;
 
     constructor() {
         this.consoleOptions = new Console.CommandConsoleOptions();
@@ -26,10 +27,12 @@ export class DestinyCommandConsole {
             new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
         ]);
+
+        this.inventoryManager = new InventoryManager.InventoryManager();
+        this.transferMan = new InventoryItemTransferManager(this.inventoryManager);
     }
 
     public start() {
-        this.inventoryManager = new InventoryManager.InventoryManager();
         this.inventoryManager.loadState().then(() => {
             this.console = new Console.CommandConsole(this.consoleOptions);
             this.console.start();
@@ -129,7 +132,7 @@ export class DestinyCommandConsole {
             return;
         }
 
-        InventoryItemTransferManager.transferDesignatedItems(targetCharacter);
+        this.transferMan.transferDesignatedItems(targetCharacter);
     }
 
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {

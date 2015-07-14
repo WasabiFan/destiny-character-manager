@@ -11,7 +11,13 @@ import ParserUtils = require('./bungie-api/parser-utils');
 var destiny = require('destiny-client')();
 
 class InventoryItemTransferManager {
-    private static intersectArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
+    private inventoryMan: InventoryManager.InventoryManager;
+
+    constructor(inventoryMan: InventoryManager.InventoryManager) {
+        this.inventoryMan = inventoryMan;
+    }
+
+    private intersectArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
         var arr, i, id, j, len, len1, name, obj, objectsById, ref;
         objectsById = {};
         for (i = 0, len = arrays.length; i < len; i++) {
@@ -34,7 +40,7 @@ class InventoryItemTransferManager {
         })());
     }
 
-    private static diffArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
+    private diffArraysOfObjects(uniqueIdentifierAttributeName: string, ...arrays: any[][]) {
         var arr, i, id, j, len, len1, name, obj, objectsById, ref;
         objectsById = {};
         for (i = 0, len = arrays.length; i < len; i++) {
@@ -57,7 +63,7 @@ class InventoryItemTransferManager {
         })());
     }
 
-    private static findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[]) {
+    private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[]) {
         var checkAttributeNames = ['instanceId'];
         if (lookupBucketContents.length > 0 && ParserUtils.getVaultBucketFromGearBucket(lookupBucketContents[0].bucket) == Inventory.InventoryBucket.VaultGeneral)
             checkAttributeNames.push('itemHash');
@@ -87,7 +93,9 @@ class InventoryItemTransferManager {
         })());
     }
 
-    private static getCharactersFullInfo(state: InventoryManager.InventoryState, bucketIndex: number, vaultBucketIndex: number, characters: Character.Character[], target: Character.Character) {
+    private getCharactersFullInfo(state: InventoryManager.InventoryState, currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character) {
+        var characters = AppConfiguration.currentConfig.characters;
+
         var targetCharacterIndex;
         var nonTargets: Character.Character[] = [];
         for (var i = 0; i < characters.length; i++) {
@@ -99,15 +107,15 @@ class InventoryItemTransferManager {
         var areCharactersFull = true;
         var charsFull: { [charId: string]: boolean } = {};
         for (var charId in state.characters) {
-            if (state.characters[charId].buckets[bucketIndex].capacity != state.characters[charId].buckets[bucketIndex].contents.length) {
+            if (state.characters[charId].buckets[currentBucket].capacity != state.characters[charId].buckets[currentBucket].contents.length) {
                 areCharactersFull = false;
                 charsFull[charId] = false;
             }
             else
                 charsFull[charId] = true;
         }
-        var vaultFull = state.vault.buckets[vaultBucketIndex].capacity == state.vault.buckets[vaultBucketIndex].contents.length;
-        var vaultEmpty = state.vault.buckets[vaultBucketIndex].contents.length == 0;
+        var vaultFull = state.vault.buckets[currentVaultBucket].capacity == state.vault.buckets[currentVaultBucket].contents.length;
+        var vaultEmpty = state.vault.buckets[currentVaultBucket].contents.length == 0;
         var nonTargetsFull = true;
         var nonFullNonTargetIndex: number;
         for (var j = 0; j < nonTargets.length; j++)
@@ -118,11 +126,13 @@ class InventoryItemTransferManager {
         return { charactersFull: areCharactersFull, charsFull: charsFull, targetFull: charsFull[characters[targetCharacterIndex].id], vaultFull: vaultFull, vaultEmpty: vaultEmpty, nonTargetsFull: nonTargetsFull, nonFullNonTargetIndex: nonFullNonTargetIndex };
     }
 
-    private static moveAnyItemFromVault(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[], exclude: string[]) {
-        var state = inventoryMan.getCurrentState();
-        var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
-        var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, designatedItems);
-        var diff: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[vaultBucketIndex].contents, designatedItems);
+    private moveAnyItemFromVault(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[], exclude: string[]) {
+        var state = this.inventoryMan.currentState;
+        var characters = AppConfiguration.currentConfig.characters;
+
+        var fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
+        var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[currentVaultBucket].contents, designatedItems);
+        var diff: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[currentVaultBucket].contents, designatedItems);
         // TODO: When inventory works on characters, we can do this
         for (var i = 0; i < diff.length; i++) {
             if (diff[i].bucket == Inventory.InventoryBucket.Consumables ||
@@ -131,8 +141,8 @@ class InventoryItemTransferManager {
         }
         for (var i = 0; i < intersection.length; i++) {
             var gearBucket = ParserUtils.getGearBucketForVaultItem(intersection[i])
-            if (gearBucket != bucketIndex && state.characters[targetIndex].buckets[gearBucket].capacity != state.characters[targetIndex].buckets[gearBucket].contents.length && exclude.indexOf(intersection[i].instanceId) == -1) {
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, intersection[i]);
+            if (gearBucket != currentBucket && state.characters[target.id].buckets[gearBucket].capacity != state.characters[target.id].buckets[gearBucket].contents.length && exclude.indexOf(intersection[i].instanceId) == -1) {
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, intersection[i]);
                 return;
             }
         }
@@ -142,12 +152,12 @@ class InventoryItemTransferManager {
                 if (characters[j].id == target.id)
                     continue;
                 if (state.characters[characters[j].id].buckets[gearBucket].contents.length < state.characters[characters[j].id].buckets[gearBucket].capacity && exclude.indexOf(intersection[i].instanceId) == -1) {
-                    inventoryMan.enqueueMoveOperation(state.characters[j], false, diff[i]);
+                    this.inventoryMan.enqueueMoveOperation(state.characters[j], false, diff[i]);
                     return;
                 }
             }
-            if (gearBucket != bucketIndex && state.characters[targetIndex].buckets[gearBucket].capacity > state.characters[targetIndex].buckets[gearBucket].contents.length && exclude.indexOf(diff[i].instanceId) == -1) {
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, diff[i]);
+            if (gearBucket != currentBucket && state.characters[target.id].buckets[gearBucket].capacity > state.characters[target.id].buckets[gearBucket].contents.length && exclude.indexOf(diff[i].instanceId) == -1) {
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, diff[i]);
                 return;
             }
         }
@@ -156,199 +166,210 @@ class InventoryItemTransferManager {
             for (var j = 0; j < characters.length; j++) {
                 if (characters[j].id == target.id)
                     continue;
-                if (gearBucket != bucketIndex && state.characters[j].buckets[gearBucket].capacity > state.characters[j].buckets[gearBucket].contents.length && exclude.indexOf(intersection[i].instanceId) == -1) {
-                    inventoryMan.enqueueMoveOperation(state.characters[j], false, intersection[i]);
+                if (gearBucket != currentBucket && state.characters[j].buckets[gearBucket].capacity > state.characters[j].buckets[gearBucket].contents.length && exclude.indexOf(intersection[i].instanceId) == -1) {
+                    this.inventoryMan.enqueueMoveOperation(state.characters[j], false, intersection[i]);
                     return;
                 }
             }
         }
         for (var i = 0; i < diff.length; i++) {
             var gearBucket = ParserUtils.getGearBucketForVaultItem(diff[i]);
-            if (state.characters[targetIndex].buckets[gearBucket].contents.length < state.characters[targetIndex].buckets[gearBucket].capacity && exclude.indexOf(diff[i].instanceId) == -1) {
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, diff[i]);
+            if (state.characters[target.id].buckets[gearBucket].contents.length < state.characters[target.id].buckets[gearBucket].capacity && exclude.indexOf(diff[i].instanceId) == -1) {
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, diff[i]);
                 return;
             }
         }
         for (var i = 0; i < intersection.length; i++) {
-            if (ParserUtils.getGearBucketForVaultItem(diff[i]) == bucketIndex && state.characters[targetIndex].buckets[bucketIndex].contents.length < state.characters[targetIndex].buckets[bucketIndex].capacity && exclude.indexOf(intersection[i].instanceId) == -1) {
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, intersection[i]);
+            if (ParserUtils.getGearBucketForVaultItem(diff[i]) == currentBucket && state.characters[target.id].buckets[currentBucket].contents.length < state.characters[target.id].buckets[currentBucket].capacity && exclude.indexOf(intersection[i].instanceId) == -1) {
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, intersection[i]);
                 return;
             }
         }
         return -1;
     }
 
-    private static prepForTransfer(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
-        var state = inventoryMan.getCurrentState();
-        var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
+    private prepForTransfer(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var state = this.inventoryMan.currentState;
+
+        var fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
         if (fullInfo.vaultFull) {
-            if (this.moveAnyItemFromVault(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1) {
+            if (this.moveAnyItemFromVault(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems, []) == -1) {
                 console.error('No space is availible in inventory or vault to effect transfer');
                 return;
             }
         }
-        state = inventoryMan.getCurrentState();
-        fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
-        var targetBucket = state.characters[targetIndex].buckets[bucketIndex];
+
+        fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
+        var targetBucket = state.characters[target.id].buckets[currentBucket];
         var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', targetBucket.contents, designatedItems);
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == false) {
-                inventoryMan.enqueueEquipOperation(state.characters[targetIndex], intersection[i]);
+                this.inventoryMan.enqueueEquipOperation(state.characters[target.id], intersection[i]);
                 break;
             }
         }
     }
 
-    private static moveUnequippedItems(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
-        var state = inventoryMan.getCurrentState();
-        var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
+    private moveUnequippedItems(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var state = this.inventoryMan.currentState;
+        var characters = AppConfiguration.currentConfig.characters;
+
+        var fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
         var items: { item: Inventory.GearItem; char: string }[] = [];
         for (var i = 0; i < characters.length; i++) {
             if (characters[i].id == target.id)
                 continue;
-            var intersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
+            var intersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[currentBucket].contents, designatedItems);
             for (var j = 0; j < intersection.length; j++)
                 if (!intersection[j].isEquipped)
                     items.push({ item: intersection[j], char: characters[i].id });
         }
-        var vaultIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
+        var vaultIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[currentVaultBucket].contents, bucketDesignatedItems);
         for (var i = 0; i < vaultIntersection.length; i++)
             items.push({ item: vaultIntersection[j], char: "-1" });
         for (var i = 0; i < items.length; i++) {
-            var targetIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
+            var targetIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[target.id].buckets[currentBucket].contents, designatedItems);
             if (targetIntersection.length > 8)
-                this.equipDesignatedItem(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+                this.equipDesignatedItem(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
             var isInVault = items[i].char == "-1";
-            state = inventoryMan.getCurrentState();
-            fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
+
+            fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
             if (fullInfo.targetFull) {
                 if (!isInVault)
-                    inventoryMan.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
-                this.moveAnyItemFromVault(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, [items[i].item.instanceId]);
-                var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[targetIndex].buckets[bucketIndex].contents, designatedItems);
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], true, temps[0]);
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, items[i].item);
+                    this.inventoryMan.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
+                this.moveAnyItemFromVault(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems, [items[i].item.instanceId]);
+                var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[target.id].buckets[currentBucket].contents, designatedItems);
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], true, temps[0]);
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, items[i].item);
             }
             else {
                 if (!isInVault)
-                    inventoryMan.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
-                inventoryMan.enqueueMoveOperation(state.characters[targetIndex], false, items[i].item);
+                    this.inventoryMan.enqueueMoveOperation(state.characters[items[i].char], true, items[i].item);
+                this.inventoryMan.enqueueMoveOperation(state.characters[target.id], false, items[i].item);
             }
         }
     }
 
-    private static equipDesignatedItem(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
-        var state = inventoryMan.getCurrentState();
-        var bucket = state.characters[targetIndex].buckets[bucketIndex];
+    private equipDesignatedItem(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var state = this.inventoryMan.currentState;
+        var characters = AppConfiguration.currentConfig.characters;
+
+        var bucket = state.characters[target.id].buckets[currentBucket];
         var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', bucket.contents, designatedItems);
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == true)
                 return;
             else if (intersection[i].getIsEquipped() == false) {
-                inventoryMan.enqueueEquipOperation(state.characters[targetIndex], intersection[i]);
+                this.inventoryMan.enqueueEquipOperation(state.characters[target.id], intersection[i]);
                 return;
             }
         }
     }
 
-    private static moveEquippedItems(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
-        var state = inventoryMan.getCurrentState();
+    private moveEquippedItems(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var state = this.inventoryMan.currentState;
+        var characters = AppConfiguration.currentConfig.characters;
+
         var items: { item: Inventory.GearItem; char: string }[] = [];
         for (var i = 0; i < characters.length; i++) {
             if (characters[i].id == target.id)
                 continue;
-            var inventoriedItems: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[bucketIndex].contents, designatedItems);
+            var inventoriedItems: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[characters[i].id].buckets[currentBucket].contents, designatedItems);
             for (var j = 0; j < inventoriedItems.length; j++) {
                 if (inventoriedItems[j].getIsEquipped() == true) {
                     items.push({ item: inventoriedItems[j], char: characters[i].id });
                 }
             }
         }
+
         for (var i = 0; i < items.length; i++) {
-            state = inventoryMan.getCurrentState();
             var toEquip: Inventory.InventoryItem;
-            if (state.characters[items[i].char].buckets[bucketIndex].contents.length == 1) {
-                var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[vaultBucketIndex].contents, bucketDesignatedItems);
+            if (state.characters[items[i].char].buckets[currentBucket].contents.length == 1) {
+                var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[currentVaultBucket].contents, bucketDesignatedItems);
                 var vaultTemp;
                 if (vaultTemps.length > 0) {
                     vaultTemp = vaultTemps[0];
                 }
                 else {
                     for (var j = 0; j < characters.length; j++) {
-                        var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[j].buckets[bucketIndex].contents, designatedItems);
+                        var temps: Inventory.InventoryItem[] = this.findTempItems(state.characters[j].buckets[currentBucket].contents, designatedItems);
                         if (temps.length > 0) {
-                            inventoryMan.enqueueMoveOperation(state.characters[j], true, temps[0]);
+                            this.inventoryMan.enqueueMoveOperation(state.characters[j], true, temps[0]);
                             vaultTemp = temps[0]
                         }
                     }
                 }
-                inventoryMan.enqueueMoveOperation(state.characters[items[i].char], false, vaultTemp);
+                this.inventoryMan.enqueueMoveOperation(state.characters[items[i].char], false, vaultTemp);
                 toEquip = vaultTemp;
             }
             if (!toEquip) {
-                var sourceBucket = state.characters[items[i].char].buckets[bucketIndex];
+                var sourceBucket = state.characters[items[i].char].buckets[currentBucket];
                 for (var j = 0; j < sourceBucket.contents.length; j++) {
                     if (sourceBucket.contents[j].getIsEquipped() == false)
                         toEquip = sourceBucket.contents[j];
                 }
             }
-            inventoryMan.enqueueEquipOperation(state.characters[items[i].char], toEquip);
+            this.inventoryMan.enqueueEquipOperation(state.characters[items[i].char], toEquip);
         }
-        this.moveUnequippedItems(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
+
+        this.moveUnequippedItems(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
     }
 
-    private static moveTargetTemps(inventoryMan: InventoryManager.InventoryManager, characters: Character.Character[], bucketIndex: number, vaultBucketIndex: number, target: Character.Character, targetIndex: string, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
-        var state = inventoryMan.getCurrentState();
-        var targetBucket = state.characters[targetIndex].buckets[bucketIndex];
+    private moveTargetTemps(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character, designatedItems: Inventory.InventoryItem[], bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var state = this.inventoryMan.currentState;
+        var targetBucket = state.characters[target.id].buckets[currentBucket];
         var temps: Inventory.InventoryItem[] = this.findTempItems(targetBucket.contents, designatedItems);
+
         for (var i = 0; i < temps.length; i++) {
-            state = inventoryMan.getCurrentState();
             if (temps[i].getIsEquipped() == true)
                 continue;
-            var fullInfo = this.getCharactersFullInfo(state, bucketIndex, vaultBucketIndex, characters, target);
+
+            var fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, target);
+
             if (fullInfo.vaultFull && !fullInfo.nonTargetsFull) {
-                if (this.moveAnyItemFromVault(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems, []) == -1)
+                if (this.moveAnyItemFromVault(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems, []) == -1)
                     continue;
             }
             else if (fullInfo.vaultFull && fullInfo.nonTargetsFull)
                 break;
-            inventoryMan.enqueueMoveOperation(state.characters[targetIndex], true, temps[i]);
+
+            this.inventoryMan.enqueueMoveOperation(state.characters[target.id], true, temps[i]);
         }
     }
 
-    public static transferDesignatedItems(target: Character.Character) {
-        var inventoryMan = new InventoryManager.InventoryManager();
-        inventoryMan.loadState().then(() => {
-            var state = inventoryMan.getCurrentState();
-            var characters = AppConfiguration.currentConfig.characters;
-            var targetIndex: string = target.id;
-            // Find all designated items
-            var designatedItems = AppConfiguration.currentConfig.designatedItems;
-            var designatedBuckets = [];
-            for (var i = 0; i < designatedItems.length; i++) {
-                if (designatedBuckets.indexOf(designatedItems[i].bucket) == -1)
-                    designatedBuckets.push(designatedItems[i].bucket);
-            }
-            // Loop through buckets
-            for (var i = 0; i < designatedBuckets.length; i++) {
-                var bucketIndex = designatedBuckets[i];
-                if (bucketIndex == Inventory.InventoryBucket.GhostShell || bucketIndex == Inventory.InventoryBucket.Subclass)
-                    continue;
-                var bucketDesignatedItems: Inventory.InventoryItem[] = [];
-                for (var j = 0; j < designatedItems.length; j++)
-                    if (designatedItems[j].bucket == bucketIndex)
-                        bucketDesignatedItems.push(designatedItems[j]);
-                var vaultBucketIndex = ParserUtils.getVaultBucketFromGearBucket(bucketIndex);
-                this.prepForTransfer(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.moveUnequippedItems(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.equipDesignatedItem(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.moveEquippedItems(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-                this.moveTargetTemps(inventoryMan, characters, bucketIndex, vaultBucketIndex, target, targetIndex, designatedItems, bucketDesignatedItems);
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
+    public transferDesignatedItems(target: Character.Character) {
+        if (!this.inventoryMan.isLoaded)
+            // TODO: Return error instead
+            throw new Error('The inventory must be loaded before transferring items.');
+
+        var state = this.inventoryMan.currentState;
+        var characters = AppConfiguration.currentConfig.characters;
+
+        // Find all designated items
+        var designatedItems = AppConfiguration.currentConfig.designatedItems;
+        var designatedBuckets: Inventory.InventoryBucket[] = [];
+        for (var i = 0; i < designatedItems.length; i++) {
+            if (designatedBuckets.indexOf(designatedItems[i].bucket) == -1)
+                designatedBuckets.push(designatedItems[i].bucket);
+        }
+        // Loop through buckets
+        for (var i = 0; i < designatedBuckets.length; i++) {
+            var currentBucket = designatedBuckets[i];
+            if (currentBucket == Inventory.InventoryBucket.GhostShell || currentBucket == Inventory.InventoryBucket.Subclass)
+                continue;
+            var bucketDesignatedItems: Inventory.InventoryItem[] = [];
+            for (var j = 0; j < designatedItems.length; j++)
+                if (designatedItems[j].bucket == currentBucket)
+                    bucketDesignatedItems.push(designatedItems[j]);
+
+            var currentVaultBucket = ParserUtils.getVaultBucketFromGearBucket(currentBucket);
+            this.prepForTransfer(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
+            this.moveUnequippedItems(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
+            this.equipDesignatedItem(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
+            this.moveEquippedItems(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
+            this.moveTargetTemps(currentBucket, currentVaultBucket, target, designatedItems, bucketDesignatedItems);
+        }
     }
-};
+}
 
 export = InventoryItemTransferManager;

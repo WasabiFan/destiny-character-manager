@@ -46,6 +46,14 @@ export class InventoryManager {
         return Promise.all(promises);
     }
 
+    public get currentState(): InventoryState {
+            return this.workingState;
+    }
+
+    public get isLoaded(): boolean {
+        return this.workingState != undefined;
+    }
+
     private getCharacterFromBuckets(buckets: BucketGearCollection, character: Character.Character): CharacterInventoryState {
         var characterInventory = new CharacterInventoryState();
         characterInventory.character = character;
@@ -74,9 +82,6 @@ export class InventoryManager {
         return result;
     }
 
-    public getCurrentState(): InventoryState {
-        return this.workingState;
-    }
 
     public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem): boolean {
 
