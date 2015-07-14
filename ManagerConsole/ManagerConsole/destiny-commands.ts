@@ -7,6 +7,7 @@ import Console = require('./command-console');
 import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Filters = require('./filters');
+import ParserUtils = require('./bungie-api/parser-utils');
 import Table = require('easy-table');
 import Chalk = require('chalk');
 
@@ -54,60 +55,16 @@ export class DestinyCommandConsole {
     }
 
     private listAction(fullArgs: string, characterAlias: string, filterStr: string) {
-        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
+        var filter = new Filters.InventoryFilter(filterStr);
+        var items = this.getItemsFromAlias(characterAlias);
 
-        if (targetCharacter == null) {
-            console.log('Invalid character alias: ' + characterAlias);
+        if (items == null) {
+            console.log('Invalid source alias: ' + characterAlias);
             return;
         }
 
-        var filter = new Filters.InventoryFilter(filterStr);
-        var filteredItems = filter.findMatchesInCollection(this.inventoryManager.getAllCharacterItems(targetCharacter));
-
-        var resultTable = new Table();
-
-        for (var i in filteredItems) {
-            var chalkChain = [];
-
-            switch (filteredItems[i].bucket) {
-                case Inventory.InventoryBucket.PrimaryWeapon:
-                    chalkChain.push('white');
-                    break;
-                case Inventory.InventoryBucket.SpecialWeapon:
-                    chalkChain.push('green');
-                    break;
-                case Inventory.InventoryBucket.HeavyWeapon:
-                    chalkChain.push('magenta');
-                    break;
-                case Inventory.InventoryBucket.Helmet:
-                    chalkChain.push('cyan');
-                    break;
-                case Inventory.InventoryBucket.Gauntlets:
-                    chalkChain.push('blue');
-                    break;
-                case Inventory.InventoryBucket.ChestArmor:
-                    chalkChain.push('yellow');
-                    break;
-                case Inventory.InventoryBucket.LegArmor:
-                    chalkChain.push('red');
-                    break;
-            }
-
-            var chalkify: any = Chalk.gray;
-            for (var chalkIndex in chalkChain) {
-                chalkify = chalkify[chalkChain[chalkIndex]];
-            }
-
-            resultTable.cell('', chalkify('█'));
-            resultTable.cell('Name', filteredItems[i].name);
-            resultTable.cell('Tier', Inventory.InventoryItemTier[filteredItems[i].tier]);
-            resultTable.cell('Type', Inventory.InventoryItemType[filteredItems[i].type]);
-            resultTable.cell('Equipped?', filteredItems[i].getIsEquipped() == true ? '█' : '');
-            // TODO: designated
-            resultTable.newRow();
-        }
-
-        console.log(resultTable.toString());
+        var filteredItems = filter.findMatchesInCollection(items);
+        this.printItemTable(filteredItems);
     }
 
     private testFilterAction(fullArgs: string) {
@@ -145,5 +102,69 @@ export class DestinyCommandConsole {
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
         Configuration.currentConfig.save();
+    }
+
+    private printItemTable(items: Inventory.InventoryItem[]) {
+        var resultTable = new Table();
+
+        for (var i in items) {
+            var chalkChain = [];
+
+            var itemBucket = items[i].bucket;
+            if (ParserUtils.isVault(itemBucket))
+                itemBucket = ParserUtils.getGearBucketForVaultItem(items[i]);
+
+            switch (itemBucket) {
+                case Inventory.InventoryBucket.PrimaryWeapon:
+                    chalkChain.push('white');
+                    break;
+                case Inventory.InventoryBucket.SpecialWeapon:
+                    chalkChain.push('green');
+                    break;
+                case Inventory.InventoryBucket.HeavyWeapon:
+                    chalkChain.push('magenta');
+                    break;
+                case Inventory.InventoryBucket.Helmet:
+                    chalkChain.push('cyan');
+                    break;
+                case Inventory.InventoryBucket.Gauntlets:
+                    chalkChain.push('blue');
+                    break;
+                case Inventory.InventoryBucket.ChestArmor:
+                    chalkChain.push('yellow');
+                    break;
+                case Inventory.InventoryBucket.LegArmor:
+                    chalkChain.push('red');
+                    break;
+            }
+
+            var chalkify: any = Chalk.gray;
+            for (var chalkIndex in chalkChain) {
+                chalkify = chalkify[chalkChain[chalkIndex]];
+            }
+
+            resultTable.cell('', chalkify('█'));
+            resultTable.cell('Name', items[i].name);
+            resultTable.cell('Tier', Inventory.InventoryItemTier[items[i].tier]);
+            resultTable.cell('Type', Inventory.InventoryItemType[items[i].type]);
+            resultTable.cell('Equipped?', items[i].getIsEquipped() == true ? '█' : '');
+            // TODO: designated
+            resultTable.newRow();
+        }
+
+        console.log(resultTable.toString());
+    }
+
+    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[]{
+        if (sourceAlias.toLowerCase() === 'vault') {
+            return this.inventoryManager.getAllVaultItems();
+        }
+
+        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(sourceAlias);
+
+        if (targetCharacter == null)
+            return null;
+
+        this.inventoryManager.getAllCharacterItems(targetCharacter)
     }
 }

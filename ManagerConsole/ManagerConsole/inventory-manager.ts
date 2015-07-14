@@ -276,6 +276,17 @@ export class InventoryManager {
         return result;
     }
 
+    public getAllVaultItems(): Inventory.InventoryItem[] {
+        var result: Inventory.InventoryItem[] = [];
+
+        var inventoryBuckets = this.workingState.vault.buckets;
+        for (var bucketIndex in inventoryBuckets) {
+            result.push.apply(result, inventoryBuckets[bucketIndex].contents);
+        }
+
+        return result;
+    }
+
     public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode) {
         var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
 
