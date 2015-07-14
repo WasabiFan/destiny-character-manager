@@ -12,6 +12,7 @@ export class InventoryManagementQueue {
     private workingState: InventoryState;
     private operationQueue: QueuedOperation[] = [];
     private lastQueueOperationPromise: Promise<any>;
+    private requestCounter: number = 0;
 
     public loadState(): Promise<any> {
         var workingState = this.workingState = new InventoryState();
@@ -202,7 +203,7 @@ export class InventoryManagementQueue {
                     setTimeout(() => {
                         this.lastQueueOperationPromise = null;
                         resolve();
-                    }, 1000);
+                    }, 600);
                 });
             }
 
@@ -213,6 +214,40 @@ export class InventoryManagementQueue {
         });
 
         this.lastQueueOperationPromise = newPromise;
+    }
+
+    private printApiError(error: string) {
+        console.error('Destiny api error: ' + error);
+    }
+
+    private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, authHeaders, retryCounter) {
+        return new Promise((resolve, reject) => {
+            if (retryCounter >= 4) {
+                this.printApiError('Operation retry count exceeded on ' + (operation.type == QueuedOperationType.EquipItem ? 'equip item operation ' : 'move item operation') + 'with params ' + JSON.stringify(operation.operationParams, null, 4));
+                reject();
+            }
+
+            console.log('Request ' + ++this.requestCounter + ': Excecuting' + (retryCounter > 1 ? ' retry ' : ' ') + (operation.type == QueuedOperationType.EquipItem ? 'equip ' : 'move') + ' operation with params: ' + JSON.stringify(operation.operationParams, null, 4));
+
+            destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res=> {
+                if (res.ErrorStatus != "Success") {
+                    this.printApiError(res.ErrorStatus);
+                    if (res.ErrorStatus == 'ThrottleLimitExceededMomentarily')
+                        this.getDestinyApiPromise(destinyApiFunction, operation, authHeaders, retryCounter + 1).then(() => {
+                            resolve();
+                        });
+                    else
+                        resolve();
+                }
+                else
+                    resolve();
+            }).catch(err=> {
+                this.printApiError('Networking error');
+                this.getDestinyApiPromise(destinyApiFunction, operation, authHeaders, retryCounter + 1).then(() => {
+                    resolve();
+                });
+            })
+        });
     }
 
     private executeQueuedOperation(operation: QueuedOperation): Promise<any> {
@@ -227,14 +262,8 @@ export class InventoryManagementQueue {
                 break;
         }
 
-        console.log('Executing operation "' + operation.type.toString() + '" with params: ' + JSON.stringify(operation.operationParams, null, 4));
 
-        return destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders());/*.then(res=> {
-            console.log(res);
-        }).catch(err=> {
-                console.log(err);
-        });*/
-
+        return this.getDestinyApiPromise(destinyApiFunction, operation, Bungie.getAuthHeaders(), 1);
     }
 }
 
