@@ -29,6 +29,11 @@ export class FilterUtils {
     }
 }
 
+export enum FilterQuantifier {
+    AndHigher = 1,
+    AndLower = -1
+}
+
 export class FilterData {
     public static bucketFilterStrs = {
         'primary': Inventory.InventoryBucket.PrimaryWeapon,
@@ -62,11 +67,6 @@ export class FilterData {
         '-': FilterQuantifier.AndLower
     }
 
-}
-
-export enum FilterQuantifier {
-    AndHigher = 1,
-    AndLower = -1
 }
 
 export class FilterPart {
