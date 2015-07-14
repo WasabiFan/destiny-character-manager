@@ -7,6 +7,7 @@ import Gear = require('./bungie-api/gear-api');
 import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import Character = require('./bungie-api/api-objects/character');
 import ParserUtils = require('./bungie-api/parser-utils');
+import Filters = require('./filters');
 
 export class InventoryManagementQueue {
     private workingState: InventoryState;
@@ -264,6 +265,51 @@ export class InventoryManagementQueue {
 
 
         return this.getDestinyApiPromise(destinyApiFunction, operation, Bungie.getAuthHeaders(), 1);
+    }
+
+    public getAllCharacterItems(targetCharacter: Character.Character): Inventory.InventoryItem[] {
+        var result: Inventory.InventoryItem[] = [];
+
+        var inventoryBuckets = this.workingState.characters[targetCharacter.id].buckets;
+        for (var bucketIndex in inventoryBuckets) {
+            result.push.apply(result, inventoryBuckets[bucketIndex].contents);
+        }
+
+        return result;
+    }
+
+    public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode) {
+        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
+
+        // If they're removing items, they don't need to specify a character
+        if (targetCharacter == null && filterMode == Filters.FilterMode.Add) {
+            console.log('Invalid character alias: ' + characterAlias);
+            return;
+        }
+
+        var collectionToSearch: Inventory.InventoryItem[] = [];
+        if (filterMode == Filters.FilterMode.Add) {
+            collectionToSearch = this.getAllCharacterItems(targetCharacter);
+        }
+        else if (filterMode == Filters.FilterMode.Remove) {
+            collectionToSearch = Configuration.currentConfig.designatedItems;
+        }
+
+        var selectedItems = filter.findMatchesInCollection(collectionToSearch);
+
+        if (filterMode == Filters.FilterMode.Add) {
+            Configuration.currentConfig.designatedItems.push.apply(Configuration.currentConfig.designatedItems, selectedItems);
+        }
+        else if (filterMode == Filters.FilterMode.Remove) {
+            for (var selIndex in selectedItems) {
+                var designatedItemIndex = Filters.FilterUtils.customIndexOf(Configuration.currentConfig.designatedItems,(item) => {
+                    return item.instanceId == selectedItems[selIndex].instanceId
+                        && item.itemHash == selectedItems[selIndex].itemHash;
+                });
+
+                Configuration.currentConfig.designatedItems.splice(designatedItemIndex, 1);
+            }
+        }
     }
 }
 

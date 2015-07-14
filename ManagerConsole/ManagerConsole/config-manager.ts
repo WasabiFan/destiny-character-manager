@@ -49,6 +49,18 @@ class AppConfiguration {
     public save() {
         fs.writeFileSync(AppConfiguration.configFilePath, JSON.stringify(this, null, 4));
     }
+
+    public getCharacterFromAlias(alias: string): Character.AliasedCharacter {
+        if (alias == null || alias == undefined)
+            return null;
+        
+        for (var i in this.characters) {
+            if (this.characters[i].alias.toLowerCase() == alias.toLowerCase())
+                return this.characters[i];
+        }
+
+        return null;
+    }
 }
 
 export = AppConfiguration;
