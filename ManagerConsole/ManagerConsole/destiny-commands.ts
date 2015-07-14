@@ -4,7 +4,7 @@ import Inventory = require('./bungie-api/api-objects/inventory');
 import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
-import ManagementQueue = require('./inventory-management-queue');
+import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Filters = require('./filters');
 import Table = require('easy-table');
@@ -13,7 +13,7 @@ import Chalk = require('chalk');
 export class DestinyCommandConsole {
     private console: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
-    private inventoryManager: ManagementQueue.InventoryManagementQueue;
+    private inventoryManager: InventoryManager.InventoryManager;
 
     constructor() {
         this.consoleOptions = new Console.CommandConsoleOptions();
@@ -29,7 +29,7 @@ export class DestinyCommandConsole {
     }
 
     public start() {
-        this.inventoryManager = new ManagementQueue.InventoryManagementQueue();
+        this.inventoryManager = new InventoryManager.InventoryManager();
         this.inventoryManager.loadState().then(() => {
             this.console = new Console.CommandConsole(this.consoleOptions);
             this.console.start();

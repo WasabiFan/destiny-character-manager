@@ -6,7 +6,7 @@ import Inventory = require('./bungie-api/api-objects/inventory');
 import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
-import ManagementQueue = require('./inventory-management-queue');
+import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Commands = require('./destiny-commands');
 

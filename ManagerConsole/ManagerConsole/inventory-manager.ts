@@ -9,9 +9,8 @@ import Character = require('./bungie-api/api-objects/character');
 import ParserUtils = require('./bungie-api/parser-utils');
 import Filters = require('./filters');
 
-export class InventoryManagementQueue {
+export class InventoryManager {
     private workingState: InventoryState;
-    private operationQueue: QueuedOperation[] = [];
     private lastQueueOperationPromise: Promise<any>;
     private requestCounter: number = 0;
 
@@ -128,9 +127,6 @@ export class InventoryManagementQueue {
             transferToVault: toVault
         };
 
-        // Push the operation to the queue (currently unused)
-        this.operationQueue.push(newOperation);
-
         // Register this operation to happen after the previous one completes
         this.processQueueAddition(newOperation);
 
@@ -181,9 +177,6 @@ export class InventoryManagementQueue {
             characterId: character.character.id,
             itemId: item.instanceId
         };
-
-        // Push new operation to the queue (currently unused)
-        this.operationQueue.push(newOperation);
 
         // Register the new operation to happen after the previous one completes
         this.processQueueAddition(newOperation);

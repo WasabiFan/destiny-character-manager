@@ -47,7 +47,7 @@
     <TypeScriptCompile Include="destiny-commands.ts" />
     <TypeScriptCompile Include="filters.ts" />
     <TypeScriptCompile Include="inventory-item-transfer-manager.ts" />
-    <TypeScriptCompile Include="inventory-management-queue.ts" />
+    <TypeScriptCompile Include="inventory-manager.ts" />
     <TypeScriptCompile Include="Scripts\typings\chalk\chalk.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\easy-table\easy-table.d.ts" />
