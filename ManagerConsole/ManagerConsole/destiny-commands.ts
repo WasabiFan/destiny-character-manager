@@ -6,6 +6,9 @@ import Configuration = require('./config-manager');
 import Console = require('./command-console');
 import ManagementQueue = require('./inventory-management-queue');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
+import Filters = require('./filters');
+import Table = require('easy-table');
+import Chalk = require('chalk');
 
 export class DestinyCommandConsole {
     private bucketFilterStrs = {
@@ -36,8 +39,8 @@ export class DestinyCommandConsole {
     };
 
     private quantifierFilterStrs = {
-        '+': FilterQuantifier.AndHigher,
-        '-': FilterQuantifier.AndLower
+        '+': Filters.FilterQuantifier.AndHigher,
+        '-': Filters.FilterQuantifier.AndLower
     }
 
     private console: Console.CommandConsole;
@@ -49,8 +52,10 @@ export class DestinyCommandConsole {
         this.consoleOptions.commandRoot = new Console.Command(null, [
             new Console.Command('set', this.setAction.bind(this)),
             new Console.Command('list', this.listAction.bind(this)),
-            new Console.Command('la', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
+            new Console.Command('mark', this.markAction.bind(this)),
+            new Console.Command('umark', this.unmarkAction.bind(this)),
+            new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
         ]);
     }
@@ -77,35 +82,152 @@ export class DestinyCommandConsole {
         }
     }
 
-    private listAction(fullArgs: string) {
+    private listAction(fullArgs: string, characterAlias: string, filterStr: string) {
+        var targetCharacter = this.getCharacterFromAlias(characterAlias);
+
+        if (targetCharacter == null) {
+            console.log('Invalid character alias: ' + characterAlias);
+            return;
+        }
+
+        var filteredItems = this.findAllFilterMatches(this.getAllCharacterItems(targetCharacter), this.parseFilterStr(filterStr));
+
+        var resultTable = new Table();
+
+        for (var i in filteredItems) {
+            var chalkChain = [];
+
+            switch (filteredItems[i].bucket) {
+                case Inventory.InventoryBucket.PrimaryWeapon:
+                    chalkChain.push('white');
+                    break;
+                case Inventory.InventoryBucket.SpecialWeapon:
+                    chalkChain.push('green');
+                    break;
+                case Inventory.InventoryBucket.HeavyWeapon:
+                    chalkChain.push('magenta');
+                    break;
+                case Inventory.InventoryBucket.Helmet:
+                    chalkChain.push('cyan');
+                    break;
+                case Inventory.InventoryBucket.Gauntlets:
+                    chalkChain.push('blue');
+                    break;
+                case Inventory.InventoryBucket.ChestArmor:
+                    chalkChain.push('yellow');
+                    break;
+                case Inventory.InventoryBucket.LegArmor:
+                    chalkChain.push('red');
+                    break;
+            }
+
+            var chalkify: any = Chalk.gray;
+            for (var chalkIndex in chalkChain) {
+                chalkify = chalkify[chalkChain[chalkIndex]];
+            }
+
+            resultTable.cell('', chalkify('█'));
+            resultTable.cell('Name', filteredItems[i].name);
+            resultTable.cell('Tier', Inventory.InventoryItemTier[filteredItems[i].tier]);
+            resultTable.cell('Type', Inventory.InventoryItemType[filteredItems[i].type]);
+            resultTable.cell('Equipped?', filteredItems[i].getIsEquipped() == true ? '█' : '');
+            // TODO: designated
+            resultTable.newRow();
+        }
+
+        console.log(resultTable.toString());
     }
 
-    private filterItems(filterStr: string, baseFilter: (item: Inventory.InventoryItem) => boolean) {
+    private applyDesignatedItemsFilter(characterAlias: string, filterStr: string, filterMode: Filters.FilterMode) {
+        var targetCharacter = this.getCharacterFromAlias(characterAlias);
+
+        // If they're removing items, they don't need to specify a character
+        if (targetCharacter == null && filterMode == Filters.FilterMode.Add) {
+            console.log('Invalid character alias: ' + characterAlias);
+            return;
+        }
+
         var filterObj = this.parseFilterStr(filterStr);
 
-        //TODO: Figure out what pool of items we want to look in
+        var collectionToSearch: Inventory.InventoryItem[] = [];
+        if (filterMode == Filters.FilterMode.Add) {
+            collectionToSearch = this.getAllCharacterItems(targetCharacter);
+        }
+        else if (filterMode == Filters.FilterMode.Remove) {
+            collectionToSearch = Configuration.currentConfig.designatedItems
+        }
+
+        var selectedItems = this.findAllFilterMatches(collectionToSearch, filterObj);
+
+        if (filterMode == Filters.FilterMode.Add) {
+            Configuration.currentConfig.designatedItems.push.apply(Configuration.currentConfig.designatedItems, selectedItems);
+        }
+        else if (filterMode == Filters.FilterMode.Remove) {
+            for (var selIndex in selectedItems) {
+                var designatedItemIndex = this.customIndexOf(Configuration.currentConfig.designatedItems,(item) => {
+                    return item.instanceId == selectedItems[selIndex].instanceId
+                        && item.itemHash == selectedItems[selIndex].itemHash;
+                });
+
+                Configuration.currentConfig.designatedItems.splice(designatedItemIndex, 1);
+            }
+        }
     }
 
-    private parseFilterStr(filterStr: string): FilterData {
-        var filterObj = new FilterData();
+    private getAllCharacterItems(targetCharacter: Character.Character): Inventory.InventoryItem[] {
+        var result: Inventory.InventoryItem[] = [];
+
+        var inventoryState = this.inventoryManager.getCurrentState();
+        var inventoryBuckets = inventoryState.characters[targetCharacter.id].buckets;
+        for (var bucketIndex in inventoryBuckets) {
+            result.push.apply(result, inventoryBuckets[bucketIndex].contents);
+        }
+
+        return result;
+    }
+
+    private findAllFilterMatches(itemCollection: Inventory.InventoryItem[], filterObj: Filters.FilterCriteria): Inventory.InventoryItem[] {
+        var result: Inventory.InventoryItem[] = [];
+        for (var i in itemCollection) {
+            if (filterObj.doesMeetCriteria(itemCollection[i]))
+                result.push(itemCollection[i]);
+        }
+
+        return result;
+    }
+
+    private customIndexOf(collection: any[], selector: (item: any) => boolean): number {
+        var targetIndex: number = -1;
+        for (var i in collection)
+            if (selector(collection[i]))
+                targetIndex = i;
+
+        return targetIndex;
+    }
+
+    private parseFilterStr(filterStr: string): Filters.FilterCriteria {
+        var filterObj = new Filters.FilterCriteria();
+
+        if (filterStr == undefined || filterStr.length <= 0)
+            return filterObj;
 
         // TODO: support excludes
         // TODO: support quantifiers for bucket?
-        var filterParts = filterStr.split(' ');
+        var filterParts = filterStr.split(';');
         for (var i in filterParts) {
             var filterDesc = this.loadFilterPartInfo(filterParts[i]);
 
             switch (filterDesc.filterType) {
-                case FilterType.Invalid:
+                case Filters.FilterType.Invalid:
                     console.error('Invalid filter: ' + filterParts[i]);
                     break;
-                case FilterType.NameFilter:
+                case Filters.FilterType.NameFilter:
                     // TODO
                     break;
-                case FilterType.BucketFilter:
+                case Filters.FilterType.BucketFilter:
                     filterObj.buckets.push(filterDesc.baseBucket);
                     break;
-                case FilterType.TierFilter:
+                case Filters.FilterType.TierFilter:
                     var newTiers = this.getTiersForQuantifier(filterDesc.baseTier, filterDesc.quantifier);
                     filterObj.tiers.push.apply(filterObj.tiers, newTiers);
                     break;
@@ -115,11 +237,11 @@ export class DestinyCommandConsole {
         return filterObj;
     }
 
-    private loadFilterPartInfo(filterPart: string): FilterDescriptor {
-        var filterDesc: FilterDescriptor = new FilterDescriptor();
+    private loadFilterPartInfo(filterPart: string): Filters.FilterDescriptor {
+        var filterDesc: Filters.FilterDescriptor = new Filters.FilterDescriptor();
 
         if (filterPart.indexOf('~') === 0) {
-            filterDesc.filterType = FilterType.NameFilter;
+            filterDesc.filterType = Filters.FilterType.NameFilter;
             // TODO: parse name part
             return filterDesc;
         }
@@ -127,7 +249,7 @@ export class DestinyCommandConsole {
         var wordPartMatches = filterPart.match(/^\w+/);
 
         if (wordPartMatches == undefined) {
-            filterDesc.filterType = FilterType.Invalid;
+            filterDesc.filterType = Filters.FilterType.Invalid;
             return filterDesc
         }
 
@@ -138,19 +260,19 @@ export class DestinyCommandConsole {
         var quantifierAddition = this.quantifierFilterStrs[filterPart.substring(wordPart.length)];
 
         if (tierFilter != undefined) {
-            filterDesc.filterType = FilterType.TierFilter;
+            filterDesc.filterType = Filters.FilterType.TierFilter;
             filterDesc.baseTier = tierFilter;
             filterDesc.quantifier = quantifierAddition;
         }
         else if (bucketFilter != undefined) {
-            filterDesc.filterType = FilterType.BucketFilter;
+            filterDesc.filterType = Filters.FilterType.BucketFilter;
             filterDesc.baseBucket = bucketFilter;
         }
 
         return filterDesc;
     }
 
-    private getTiersForQuantifier(baseTier: Inventory.InventoryItemTier, quantifier: FilterQuantifier): Inventory.InventoryItemTier[] {
+    private getTiersForQuantifier(baseTier: Inventory.InventoryItemTier, quantifier: Filters.FilterQuantifier): Inventory.InventoryItemTier[] {
         if (quantifier == undefined)
             return [baseTier];
 
@@ -177,17 +299,7 @@ export class DestinyCommandConsole {
     }
 
     private transferAction(fullArgs: string, characterAlias: string) {
-        if (characterAlias == undefined) {
-            console.log('Error: You must specify a character to transfer items to.');
-            return;
-        }
-
-        var targetCharacter = null;
-        for (var i in Configuration.currentConfig.characters) {
-            if (Configuration.currentConfig.characters[i].alias.toLowerCase() == characterAlias.toLowerCase())
-                targetCharacter = Configuration.currentConfig.characters[i];
-        }
-
+        var targetCharacter = this.getCharacterFromAlias(characterAlias);
         if (targetCharacter == null) {
             console.log('Invalid character alias: ' + characterAlias);
             return;
@@ -195,28 +307,27 @@ export class DestinyCommandConsole {
 
         InventoryItemTransferManager.transferDesignatedItems(targetCharacter);
     }
-}
 
-export enum FilterQuantifier {
-    AndHigher = 1,
-    AndLower = -1
-}
+    private getCharacterFromAlias(alias: string): Character.AliasedCharacter {
+        if (alias == null || alias == undefined)
+            return null;
 
-export class FilterDescriptor {
-    public baseTier: Inventory.InventoryItemTier;
-    public baseBucket: Inventory.InventoryBucket;
-    public quantifier: FilterQuantifier;
-    public filterType: FilterType;
-}
+        var targetCharacter = null;
+        for (var i in Configuration.currentConfig.characters) {
+            if (Configuration.currentConfig.characters[i].alias.toLowerCase() == alias.toLowerCase())
+                targetCharacter = Configuration.currentConfig.characters[i];
+        }
 
-export class FilterData {
-    public tiers: Inventory.InventoryItemTier[] = [];
-    public buckets: Inventory.InventoryBucket[] = [];
-}
+        return targetCharacter;
+    }
 
-export enum FilterType {
-    TierFilter,
-    BucketFilter,
-    NameFilter,
-    Invalid = -1
+    private markAction(fullArgs: string, characterAlias: string, filterStr: string) {
+        this.applyDesignatedItemsFilter(characterAlias, filterStr, Filters.FilterMode.Add);
+        Configuration.currentConfig.save();
+    }
+
+    private unmarkAction(fullArgs: string, filterStr: string) {
+        this.applyDesignatedItemsFilter(undefined, filterStr, Filters.FilterMode.Remove);
+        Configuration.currentConfig.save();
+    }
 }

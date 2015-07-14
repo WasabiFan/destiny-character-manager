@@ -45,9 +45,12 @@
     <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
     <TypeScriptCompile Include="bungie-api\parser-utils.ts" />
     <TypeScriptCompile Include="destiny-commands.ts" />
+    <TypeScriptCompile Include="filters.ts" />
     <TypeScriptCompile Include="inventory-item-transfer-manager.ts" />
     <TypeScriptCompile Include="inventory-management-queue.ts" />
+    <TypeScriptCompile Include="Scripts\typings\chalk\chalk.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\easy-table\easy-table.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\es6-promise\es6-promise.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="bungie-api\vault-api.ts" />
@@ -57,7 +60,9 @@
     <Folder Include="bungie-api\api-objects\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
+    <Folder Include="Scripts\typings\chalk\" />
     <Folder Include="Scripts\typings\cheerio\" />
+    <Folder Include="Scripts\typings\easy-table\" />
     <Folder Include="Scripts\typings\es6-promise\" />
     <Folder Include="Scripts\typings\node\" />
   </ItemGroup>
