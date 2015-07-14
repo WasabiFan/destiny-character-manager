@@ -9,25 +9,44 @@ import Characters = require('./api-objects/character');
 import Configuration = require('../config-manager');
 
 class GearApi {
-    public static getItems(targetCharacter: Characters.Character): Promise<BucketGearCollection> {
-        var gearUrl = Bungie.buildEndpointStr('Gear', Configuration.currentConfig.authMember, targetCharacter);
+    private static getItemsFromSinglePage(targetCharacter: Characters.Character, endpointType: GearEndpointType) {
+        var targetUrl = Bungie.buildEndpointStr(endpointType == GearEndpointType.Gear ? 'Gear' : 'Inventory', Configuration.currentConfig.authMember, targetCharacter);
         var promise = new Promise((resolve, reject) => {
-            Bungie.loadEndpointHtml(gearUrl).then(html => {
+            Bungie.loadEndpointHtml(targetUrl).then(html => {
                 var $ = cheerio.load(html);
-                var buckets = new BucketGearCollection();
+                var items: Inventory.InventoryItem[] = [];
 
-                $('.bucket').each((i, bucketElem) => {
+                $(endpointType == GearEndpointType.Gear ? '.bucket' : '.giantBucket').each((i, bucketElem) => {
                     var bucketCheerio = $(bucketElem);
+                    if (endpointType == GearEndpointType.Inventory && bucketCheerio.data('row') != '3')
+                        return;
 
                     var currentBucket = ParserUtils.parseInventoryBucket(bucketCheerio.data('bucketid'));
                     var currentBucketName = ParserUtils.stringifyInventoryBucket(currentBucket);
 
                     bucketCheerio.find('.bucketItem').each((i, itemElem) => {
                         var itemCheerio = $(itemElem);
-                        var newItem = this.loadGearFromCheerio(itemCheerio, currentBucket);
-                        buckets.addItem(newItem);
+                        var newItem = this.loadGearFromCheerio(itemCheerio, currentBucket, endpointType);
+                        items.push(newItem);
                     });
                 });
+
+                resolve(items);
+            });
+        });
+
+        return promise;
+    }
+    public static getItems(targetCharacter: Characters.Character): Promise<BucketGearCollection> {
+        var promise = new Promise((resolve, reject) => {
+            var gearPromise = this.getItemsFromSinglePage(targetCharacter, GearEndpointType.Gear);
+            var inventoryPromise = this.getItemsFromSinglePage(targetCharacter, GearEndpointType.Inventory);
+            Promise.all([gearPromise, inventoryPromise]).then((responseArr: Inventory.InventoryItem[][]) => {
+                var buckets = new BucketGearCollection();
+                var allItems = responseArr[0].concat(responseArr[1]);
+                for (var i in allItems) {
+                    buckets.addItem(allItems[i]);
+                }
 
                 resolve(buckets);
             });
@@ -36,7 +55,7 @@ class GearApi {
         return promise;
     }
 
-    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket): Inventory.GearItem {
+    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket, endpointType: GearEndpointType): Inventory.GearItem {
         var item: Inventory.GearItem = new Inventory.GearItem();
 
         if (ParserUtils.isWeapon(currentBucket)) {
@@ -44,7 +63,8 @@ class GearApi {
             (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
         }
 
-        item.isEquipped = itemCheerio.hasClass('equipped');
+        if(endpointType == GearEndpointType.Gear)
+            item.isEquipped = itemCheerio.hasClass('equipped');
         item.name = itemCheerio.find('.itemName').text();
         item.instanceId = itemCheerio.data('iteminstanceid');
         item.itemHash = itemCheerio.data('itemhash');
@@ -55,5 +75,10 @@ class GearApi {
         return item;
     }
 }
+
+enum GearEndpointType {
+    Inventory,
+    Gear
+};
 
 export = GearApi;
