@@ -22,7 +22,13 @@ export class DestinyCommandConsole {
         this.consoleOptions = new Console.CommandConsoleOptions();
         this.consoleOptions.commandRoot = new Console.Command(null, [
             // TODO: Add command to load data from gamertag
-            new Console.Command('set', this.setAction.bind(this)),
+            new Console.Command('config', [
+                new Console.Command('init', [
+                    new Console.Command('member', this.initMemberAction.bind(this)),
+                    //new Console.Command('characters', this.initCharacterAction.bind(this)),
+                ]),
+                new Console.Command('set', this.setAction.bind(this)),
+            ]),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
             new Console.Command('mark', this.markAction.bind(this)),
@@ -127,6 +133,12 @@ export class DestinyCommandConsole {
         Configuration.currentConfig.save();
     }
 
+    private initMemberAction(fullArgs: string, network: string, userName: string): Promise<any> {
+        var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
+
+        return Configuration.currentConfig.loadMemberInfoFromApi(userName, parsedNetwork);
+    }
+
     private printItemTable(items: Inventory.InventoryItem[]) {
         var resultTable = new Table();
 
@@ -177,7 +189,7 @@ export class DestinyCommandConsole {
         console.log(resultTable.toString());
     }
 
-    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[]{
+    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[] {
         if (sourceAlias.toLowerCase() === 'vault') {
             return this.inventoryManager.getAllVaultItems();
         }

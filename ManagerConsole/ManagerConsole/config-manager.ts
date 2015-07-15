@@ -2,14 +2,15 @@
 import Membership = require('./bungie-api/api-objects/membership');
 import Character = require('./bungie-api/api-objects/character');
 import Inventory = require('./bungie-api/api-objects/inventory');
+var destiny = require('destiny-client');
 
 class AppConfiguration {
     private static configFilePath = 'conf.json';
 
     public static currentConfig: AppConfiguration;
 
-    public authCookie: string;
     public authMember: Membership.Member;
+    public authCookie: string;
     public apiKey: string;
     public csrf: string;
 
@@ -60,6 +61,37 @@ class AppConfiguration {
         }
 
         return null;
+    }
+
+    public loadMemberInfoFromApi(playerName: string, memberType: Membership.MemberNetworkType): Promise<any> {
+        var promise = new Promise((resolve, reject) => {
+            // TODO: add catch using other API code
+            destiny.Search({
+                membershipType: memberType,
+                name: playerName
+            }).then((result) => {
+                this.authMember = Membership.Member.loadFromApiResponse(result);
+                resolve();
+            });
+        });
+
+        return promise;
+    }
+
+    public loadDefaultCharactersFromApi() {
+        var promise = new Promise((resolve, reject) => {
+            this.characters = [];
+            // TODO: add catch using other API code
+            destiny.Search({
+                membershipType: this.authMember.type,
+                membershipId: this.authMember.id
+            }).then((result) => {
+                this.characters.push.apply(this.characters, result.characters);
+                resolve();
+            });
+        });
+
+        return promise;
     }
 }
 

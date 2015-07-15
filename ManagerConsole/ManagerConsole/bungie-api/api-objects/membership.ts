@@ -2,9 +2,9 @@
 
 export class Member {
     public id: string;
-    public type: MemberType;
+    public type: MemberNetworkType;
 
-    constructor(id: string, type: MemberType) {
+    constructor(id: string, type: MemberNetworkType) {
         this.id = id;
         this.type = type;
     }
@@ -12,9 +12,13 @@ export class Member {
     public static loadFromPlain(plainObj: any): Member {
         return new Member(plainObj.id, plainObj.type);
     }
+
+    public static loadFromApiResponse(apiObj: any): Member {
+        return new Member(apiObj.membershipId, apiObj.membershipType);
+    }
 }
 
-export enum MemberType {
+export enum MemberNetworkType {
     XboxLive = 1,
     PlayStationNetwork = 2
 }

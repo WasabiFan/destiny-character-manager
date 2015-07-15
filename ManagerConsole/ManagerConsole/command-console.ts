@@ -17,6 +17,7 @@ export class CommandConsole {
     }
 
     public processCommand(commandStr: string) {
+        // TODO: disable text input
         var fullCommand: string = commandStr.replace(/(\r\n|\n|\r)/gm, "");
         var commandParts: string[] = fullCommand.split(' ');
 
@@ -29,9 +30,27 @@ export class CommandConsole {
         }
 
         if (currentCommand.action != undefined) {
-            currentCommand.action.apply(null, [fullCommand.substring(argStartIndex)].concat(commandParts.slice(i)));
-        }
+            var actionResult: Promise<any> = currentCommand.action.apply(null, [fullCommand.substring(argStartIndex)].concat(commandParts.slice(i)));
 
+            if (actionResult == undefined)
+                this.reopenPrompt();
+            else
+                actionResult.then(() => {
+                    this.reopenPrompt();
+                });
+        }
+        else {
+            var subcommandNames = [];
+            for (var subcommandIndex in currentCommand.subcommands)
+                subcommandNames.push(currentCommand.subcommands[subcommandIndex].name);
+
+            console.log('Available subcommands: ' + subcommandNames.join(', '));
+
+            this.reopenPrompt();
+        }
+    }
+
+    private reopenPrompt() {
         this.printPrompt();
     }
 
@@ -51,18 +70,20 @@ export class CommandConsoleOptions {
 
 export class Command {
     public name: string;
-    public action: (fullArgs: string, ...args: string[]) => void;
+    public action: (fullArgs: string, ...args: string[]) => void | Promise<any>;
     public subcommands: Command[];
     public helpText: string[];
 
-    constructor(name: string, actionInfo: ((fullArgs: string, ...args: string[]) => void) | Command[]) {
+    constructor(name: string, actionInfo?: ((fullArgs: string, ...args: string[]) => void | Promise<any>) | Command[], commandsArg?: Command[]) {
         this.name = name;
 
         if (typeof actionInfo === 'function') {
-            this.action = <(fullArgs: string, ...args: string[]) => void> actionInfo;
+            this.action = <(fullArgs: string, ...args: string[]) => void | Promise<any>> actionInfo;
+            if (typeof commandsArg != 'undefined')
+                this.subcommands = commandsArg;
         }
         else {
-            this.subcommands = <Command[]> actionInfo;
+            this.subcommands = <Command[]>actionInfo;
         }
     }
 

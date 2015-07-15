@@ -1,4 +1,6 @@
-﻿export class Character {
+﻿import Membership = require('./membership');
+
+export class Character {
     public characterClass: CharacterClass;
     public id: string;
 
@@ -18,6 +20,16 @@ export class AliasedCharacter extends Character {
 
     public static loadFromPlain(plainObj: any): AliasedCharacter {
         return new AliasedCharacter(plainObj.id, plainObj.characterClass, plainObj.alias);
+    }
+
+    public static loadFromApiResponse(apiObj: any): AliasedCharacter {
+        var character = new AliasedCharacter(
+            apiObj.characterBase.characterId,
+            apiObj.characterBase.classType,
+            CharacterClass[apiObj.characterBase.classType]
+            );
+
+        return character;
     }
 }
 

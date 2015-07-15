@@ -1,4 +1,6 @@
 ﻿import Inventory = require('./api-objects/inventory');
+import Character = require('./api-objects/character');
+import Membership = require('./api-objects/membership');
 
 class ParserUtils {
     private static itemTierLookupTable: { [name: string]: Inventory.InventoryItemTier } = {
@@ -254,6 +256,21 @@ class ParserUtils {
         for (var originalKey in dict)
             if (dict[originalKey] === lookupValue)
                 return originalKey;
+
+        return undefined;
+    }
+
+    public static parseMemberNetworkType(networkStr: string): Membership.MemberNetworkType {
+        switch (networkStr.toLowerCase()) {
+            case 'xbox':
+            case 'xbl':
+            case 'live':
+                return Membership.MemberNetworkType.XboxLive;
+            case 'psn':
+            case 'ps':
+            case 'playstation':
+                return Membership.MemberNetworkType.PlayStationNetwork;
+        }
     }
 }
 
