@@ -9,12 +9,11 @@ import InventoryItemTransferManager = require('./inventory-item-transfer-manager
 
 export class FilterUtils {
     public static customIndexOf<T>(collection: T[], selector: (item: T) => boolean): number {
-        var targetIndex: number = -1;
         for (var i in collection)
             if (selector(collection[i]))
-                targetIndex = i;
+                return i;
 
-        return targetIndex;
+        return -1;
     }
 
     public static getTiersForQuantifier(baseTier: Inventory.InventoryItemTier, quantifier: FilterQuantifier): Inventory.InventoryItemTier[] {
@@ -45,6 +44,14 @@ export class FilterData {
         'secondary': Inventory.InventoryBucket.SpecialWeapon,
         'heavy': Inventory.InventoryBucket.HeavyWeapon,
         'h': Inventory.InventoryBucket.HeavyWeapon,
+        'vehicle': Inventory.InventoryBucket.Vehicle,
+        'v': Inventory.InventoryBucket.Vehicle,
+        'material': Inventory.InventoryBucket.Materials,
+        'materials': Inventory.InventoryBucket.Materials,
+        'mat': Inventory.InventoryBucket.Materials,
+        'consumable': Inventory.InventoryBucket.Consumables,
+        'consumables': Inventory.InventoryBucket.Consumables,
+        'con': Inventory.InventoryBucket.Consumables,
     };
 
     public static tierFilterStrs = {
@@ -72,13 +79,14 @@ export class FilterData {
 export class FilterPart {
     public baseTier: Inventory.InventoryItemTier;
     public baseBucket: Inventory.InventoryBucket;
+    public baseKeyword: string;
     public quantifier: FilterQuantifier;
     public filterType: FilterType;
 
     constructor(filterPart: string) {
         if (filterPart.indexOf('~') === 0) {
             this.filterType = FilterType.NameFilter;
-            // TODO: parse name part
+            this.baseKeyword = filterPart.substring(1);
             return;
         }
 
@@ -115,6 +123,7 @@ export class FilterPart {
 export class InventoryFilter {
     public tiers: Inventory.InventoryItemTier[] = [];
     public buckets: Inventory.InventoryBucket[] = [];
+    public keywords: string[] = [];
 
     constructor(filterStr: string) {
         if (filterStr == undefined || filterStr.length <= 0)
@@ -123,20 +132,20 @@ export class InventoryFilter {
         // TODO: support quantifiers for bucket?
         var filterParts = filterStr.split(';');
         for (var i in filterParts) {
-            var filterDesc = new FilterPart(filterParts[i]);
+            var filterPart = new FilterPart(filterParts[i]);
 
-            switch (filterDesc.filterType) {
+            switch (filterPart.filterType) {
                 case FilterType.Invalid:
                     console.error('Invalid filter: ' + filterParts[i]);
                     break;
                 case FilterType.NameFilter:
-                    // TODO
+                    this.keywords.push(filterPart.baseKeyword.toLowerCase());
                     break;
                 case FilterType.BucketFilter:
-                    this.buckets.push(filterDesc.baseBucket);
+                    this.buckets.push(filterPart.baseBucket);
                     break;
                 case FilterType.TierFilter:
-                    var newTiers = FilterUtils.getTiersForQuantifier(filterDesc.baseTier, filterDesc.quantifier);
+                    var newTiers = FilterUtils.getTiersForQuantifier(filterPart.baseTier, filterPart.quantifier);
                     this.tiers.push.apply(this.tiers, newTiers);
                     break;
             }
@@ -145,7 +154,8 @@ export class InventoryFilter {
 
     public doesMeetCriteria(item: Inventory.InventoryItem): boolean {
         return (this.tiers.length <= 0 || this.tiers.indexOf(item.tier) >= 0)
-            && (this.buckets.length <= 0 || this.buckets.indexOf(item.bucket) >= 0);
+            && (this.buckets.length <= 0 || this.buckets.indexOf(item.bucket) >= 0)
+            && (this.keywords.length <= 0 || FilterUtils.customIndexOf(item.name.toLowerCase().split(/[\s-]+/g), item => this.keywords.indexOf(item) >= 0) >= 0);
     }
 
     public findMatchesInCollection(itemCollection: Inventory.InventoryItem[]): Inventory.InventoryItem[] {
