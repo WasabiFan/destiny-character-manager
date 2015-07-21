@@ -1,9 +1,12 @@
-﻿import Vault = require('./bungie-api/vault-api');
+﻿import _ = require('underscore');
+
+import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
+import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Filters = require('./filters');
@@ -115,12 +118,16 @@ export class DestinyCommandConsole {
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(characterAlias, filter, Filters.FilterMode.Add);
+        this.reportDesignationValidity();
+
         Configuration.currentConfig.save();
     }
 
     private unmarkAction(fullArgs: string, filterStr: string) {
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
+        this.reportDesignationValidity();
+
         Configuration.currentConfig.save();
     }
 
@@ -218,5 +225,25 @@ export class DestinyCommandConsole {
             return null;
 
         return this.inventoryManager.getAllCharacterItems(targetCharacter)
+    }
+
+    public reportDesignationValidity() {
+        var buckets = new BucketGearCollection(Configuration.currentConfig.designatedItems);
+        var errorMessages = [];
+
+        ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
+            var onlyExotics = _.select(bucketGroup, bucket => {
+                return _.every(buckets.getItems(bucket), item => item.tier === Inventory.InventoryItemTier.Exotic);
+            });
+
+            if (onlyExotics.length > 1)
+                // TODO: Report specific buckets
+                errorMessages.push('Multiple designated buckets contain only exotic items. There may be unexpected items equipped in these slots if you start a transfer.');
+        });
+
+        if (errorMessages.length > 0) {
+            console.warn('Your current configuration isn\'t valid!');
+            errorMessages.forEach(message => console.warn('    ' + message));
+        }
     }
 }
