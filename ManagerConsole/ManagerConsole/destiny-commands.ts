@@ -40,7 +40,9 @@ export class DestinyCommandConsole {
             new Console.Command('umark', this.unmarkAction.bind(this)),
             new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
-            new Console.Command('reset', this.resetAction.bind(this))
+            new Console.Command('reset', this.resetAction.bind(this)),
+            new Console.Command('calc-glimmer', this.calcGlimmerAction.bind(this))
+            
         ]);
 
         this.consoleOptions.header = [
@@ -246,5 +248,16 @@ export class DestinyCommandConsole {
             console.warn('Your current configuration isn\'t valid!');
             errorMessages.forEach(message => console.warn('    ' + message));
         }
+    }
+
+    private calcGlimmerAction(fillArgs: string, characterAlias: string) {
+        var items = this.getItemsFromAlias(characterAlias);
+
+        if (items == null) {
+            console.log('Invalid source alias: ' + characterAlias);
+            return;
+        }
+
+        // TODO: Finish
     }
 }
