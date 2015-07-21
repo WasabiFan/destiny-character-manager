@@ -32,11 +32,14 @@ class GearApi {
                 });
 
                 resolve(items);
+            }).catch((error) => {
+                reject(error);
             });
         });
 
         return promise;
     }
+
     public static getItems(targetCharacter: Characters.Character): Promise<BucketGearCollection> {
         var promise = new Promise((resolve, reject) => {
             var gearPromise = this.getItemsFromSinglePage(targetCharacter, GearEndpointType.Gear);
@@ -49,6 +52,8 @@ class GearApi {
                 }
 
                 resolve(buckets);
+            }).catch((error) => {
+                reject(error);
             });
         });
 
@@ -63,7 +68,7 @@ class GearApi {
             (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
         }
 
-        if(endpointType == GearEndpointType.Gear)
+        if (endpointType == GearEndpointType.Gear)
             item.isEquipped = itemCheerio.hasClass('equipped');
         item.name = itemCheerio.find('.itemName').text();
         item.instanceId = itemCheerio.data('iteminstanceid');
