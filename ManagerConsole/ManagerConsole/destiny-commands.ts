@@ -133,10 +133,10 @@ export class DestinyCommandConsole {
         Configuration.currentConfig.save();
     }
 
-    private initMemberAction(fullArgs: string, network: string, userName: string): Promise<any> {
+    private initMemberAction(fullArgs: string, network: string, ...userName: string[]): Promise<any> {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
-        return Configuration.currentConfig.loadMemberInfoFromApi(userName, parsedNetwork);
+        return Configuration.currentConfig.loadMemberInfoFromApi(userName.join(' '), parsedNetwork);
     }
 
     private printItemTable(items: Inventory.InventoryItem[]) {
