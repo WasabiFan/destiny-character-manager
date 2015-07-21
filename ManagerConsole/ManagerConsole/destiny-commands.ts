@@ -28,6 +28,8 @@ export class DestinyCommandConsole {
                     //new Console.Command('characters', this.initCharacterAction.bind(this)),
                 ]),
                 new Console.Command('set', this.setAction.bind(this)),
+                new Console.Command('reload', this.reloadConfigAction.bind(this)),
+                new Console.Command('save', this.saveConfigAction.bind(this))
             ]),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
@@ -142,6 +144,14 @@ export class DestinyCommandConsole {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
         return Configuration.currentConfig.loadMemberInfoFromApi(userName.join(' '), parsedNetwork);
+    }
+
+    private reloadConfigAction(fullArgs: string) {
+        Configuration.loadCurrentConfig();
+    }
+
+    private saveConfigAction(fullArgs: string) {
+        Configuration.currentConfig.save();
     }
 
     private printItemTable(items: Inventory.InventoryItem[]) {

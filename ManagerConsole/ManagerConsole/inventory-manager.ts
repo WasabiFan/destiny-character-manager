@@ -222,13 +222,15 @@ export class InventoryManager {
     private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
         var promise = new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                reject('Operation retry count exceeded on ' + (operation.type == QueuedOperationType.EquipItem ? 'equip item operation ' : 'move item operation') + 'with params ' + JSON.stringify(operation.operationParams, null, 4));
+                reject('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' operation with params ' + JSON.stringify(operation.operationParams, null, 4));
                 return;
             }
 
             console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
-                + 'Executing ' + QueuedOperationType[operation.type] + ' operation with params: '
-                + JSON.stringify(operation.operationParams, null, 4));
+                + 'Executing ' + QueuedOperationType[operation.type] + ' operation');
+
+            if (Configuration.currentConfig.debugMode)
+                console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
 
             destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
                 if (res.ErrorStatus == "Success")

@@ -14,18 +14,21 @@ class AppConfiguration {
     public apiKey: string;
     public csrf: string;
 
+    public debugMode: boolean = false;
+
     public characters: Character.AliasedCharacter[] = [];
     public designatedItems: Inventory.InventoryItem[] = [];
 
-    public static load(): AppConfiguration {
+    public static loadCurrentConfig() {
         try {
             var configStr = fs.readFileSync(this.configFilePath);
             var jsonVal = JSON.parse(configStr.toString());
 
-            return AppConfiguration.loadFromPlain(jsonVal);
+            AppConfiguration.currentConfig = AppConfiguration.loadFromPlain(jsonVal);
+            console.log('Loaded local configuration');
         }
         catch (e) {
-            return new AppConfiguration();
+            console.log('Failed to load new configuration: ' + e);
         }
     }
 
@@ -35,6 +38,7 @@ class AppConfiguration {
         newConf.authMember = Membership.Member.loadFromPlain(plainObj.authMember);
         newConf.apiKey = plainObj.apiKey;
         newConf.csrf = plainObj.csrf;
+        newConf.debugMode = plainObj.debugMode || false;
 
         newConf.characters = [];
         for (var i in plainObj.characters)
@@ -96,6 +100,3 @@ class AppConfiguration {
 }
 
 export = AppConfiguration;
-
-AppConfiguration.currentConfig = AppConfiguration.load();
-console.log('Loaded local configuration');
