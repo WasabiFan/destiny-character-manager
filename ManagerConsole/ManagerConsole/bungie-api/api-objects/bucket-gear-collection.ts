@@ -17,7 +17,7 @@ class BucketGearCollection {
     }
 
     public getItems(bucket: Inventory.InventoryBucket): Inventory.InventoryItem[]{
-        return this.bucketMap[bucket];
+        return this.bucketMap[bucket] || [];
     }
 
     public getEquippedItem(bucket: Inventory.InventoryBucket): Inventory.InventoryItem {

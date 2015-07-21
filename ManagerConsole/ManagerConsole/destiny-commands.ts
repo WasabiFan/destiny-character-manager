@@ -233,7 +233,8 @@ export class DestinyCommandConsole {
 
         ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
             var onlyExotics = _.select(bucketGroup, bucket => {
-                return _.every(buckets.getItems(bucket), item => item.tier === Inventory.InventoryItemTier.Exotic);
+                let items = buckets.getItems(bucket);
+                return items.length > 0 && _.every(items, item => item.tier === Inventory.InventoryItemTier.Exotic);
             });
 
             if (onlyExotics.length > 1)

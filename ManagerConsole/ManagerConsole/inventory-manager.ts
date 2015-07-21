@@ -1,4 +1,6 @@
-﻿var destiny = require('destiny-client')();
+﻿import _ = require('underscore');
+
+var destiny = require('destiny-client')();
 import Bungie = require('./bungie-api/api-core');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Configuration = require('./config-manager');
@@ -313,7 +315,7 @@ export class InventoryManager {
         var selectedItems = filter.findMatchesInCollection(collectionToSearch);
 
         if (filterMode == Filters.FilterMode.Add) {
-            Configuration.currentConfig.designatedItems.push.apply(Configuration.currentConfig.designatedItems, selectedItems);
+            Configuration.currentConfig.designatedItems = _.union(Configuration.currentConfig.designatedItems, selectedItems);
         }
         else if (filterMode == Filters.FilterMode.Remove) {
             for (var selIndex in selectedItems) {
