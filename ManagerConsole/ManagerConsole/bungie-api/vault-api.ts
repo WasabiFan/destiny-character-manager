@@ -13,7 +13,8 @@ class VaultApi {
         var vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', Configuration.currentConfig.authMember, targetCharacter);
         var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(vaultUrl).then((html) => {
-                var items = [];
+                var promises: Promise<any>[] = [];
+                var items: Inventory.InventoryItem[] = [];
 
                 var $ = cheerio.load(html);
                 var me = this;
@@ -21,10 +22,17 @@ class VaultApi {
                     var cheerioItem = $(element);
                     var itemInfo = me.loadVaultItemFromCheerio(cheerioItem);
 
-                    items.push(itemInfo);
+                    var itemPromise = me.loadTierForItemHash(itemInfo.itemHash).then((tier) => {
+                        itemInfo.tier = tier;
+                        items.push(itemInfo);
+                    });
+
+                    promises.push(itemPromise);
                 });
 
-                resolve(items);
+                Promise.all(promises).then(() => {
+                    resolve(items);
+                });
             });
         });
 
@@ -62,6 +70,31 @@ class VaultApi {
         newItem.tier = Inventory.InventoryItemTier.Unknown;
 
         return newItem;
+    }
+
+    private static loadTierForItemHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
+        var promise = new Promise((resolve, reject) => {
+            Bungie.loadEndpointHtml('https://www.bungie.net/en/Armory/Detail', {
+                item: itemHash
+            }).then((pageHtml: string) => {
+                var $ = cheerio.load(pageHtml);
+                var titleStr = $("meta[property='og:title']").attr('content');
+                var tierRegex = /-\s*([Ee]xotic|[Ll]egendary|[Rr]are|[Uu]ncommon|[Cc]ommon)\s*-/;
+                var matches = tierRegex.exec(titleStr);
+
+                if (matches == null) {
+                    resolve(Inventory.InventoryItemTier.Unknown);
+                    return;
+                }
+
+                var tierStr = matches[1];
+                resolve(ParserUtils.parseInventoryItemTier(tierStr));
+            }).catch((errorData) => {
+                reject(errorData);
+            });
+        });
+
+        return promise;
     }
 }
 
