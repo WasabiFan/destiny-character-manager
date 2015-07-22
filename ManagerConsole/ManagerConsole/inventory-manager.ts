@@ -118,6 +118,8 @@ export class InventoryManager {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.MoveItem;
         newOperation.requiresAuth = true;
+        newOperation.context = new OperationContext();
+        newOperation.context.item = item;
 
         // Get the stack size from the item if it's available
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
@@ -175,6 +177,8 @@ export class InventoryManager {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.EquipItem;
         newOperation.requiresAuth = true;
+        newOperation.context = new OperationContext();
+        newOperation.context.item = item;
 
         // Set the operation-specific params
         newOperation.operationParams = {
@@ -222,11 +226,11 @@ export class InventoryManager {
     private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, authHeaders, retryCounter) {
         return new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                this.printApiError('Operation retry count exceeded on ' + (operation.type == QueuedOperationType.EquipItem ? 'equip item operation ' : 'move item operation') + 'with params ' + JSON.stringify(operation.operationParams, null, 4));
+                this.printApiError('Operation retry count exceeded on ' + (operation.type == QueuedOperationType.EquipItem ? 'equip item operation ' : 'move item operation ') + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4));
                 reject();
             }
 
-            console.log('Request ' + ++this.requestCounter + ': Excecuting' + (retryCounter > 1 ? ' retry ' : ' ') + (operation.type == QueuedOperationType.EquipItem ? 'equip ' : 'move') + ' operation with params: ' + JSON.stringify(operation.operationParams, null, 4));
+            console.log('Request ' + ++this.requestCounter + ': Excecuting' + (retryCounter > 1 ? ' retry ' : ' ') + (operation.type == QueuedOperationType.EquipItem ? 'equip' : 'move') + ' operation on item "' + operation.context.item.name + '" with params: ' + JSON.stringify(operation.operationParams, null, 4));
 
             destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res=> {
                 if (res.ErrorStatus != "Success") {
@@ -236,7 +240,7 @@ export class InventoryManager {
                             resolve();
                         });
                     else
-                        resolve();
+                        reject();
                 }
                 else
                     resolve();
@@ -353,4 +357,9 @@ export class QueuedOperation {
     public type: QueuedOperationType;
     public requiresAuth: boolean;
     public operationParams: any;
+    public context: OperationContext;
+}
+
+export class OperationContext {
+    public item: Inventory.InventoryItem;
 }
