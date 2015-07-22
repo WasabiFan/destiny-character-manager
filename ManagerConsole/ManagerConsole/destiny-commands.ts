@@ -276,7 +276,25 @@ export class DestinyCommandConsole {
             return;
         }
 
-        var glimmerTotal = _.reduce(items, (memo: number, item: Inventory.InventoryItem) => memo + (this.glimmerMap[item.itemHash] || 0), 0);
-        console.log(glimmerTotal);
+        var table = new Table();
+        
+        var total = 0;
+        for (var i in items) {
+            if (this.glimmerMap[items[i].itemHash] == undefined)
+                continue;
+
+            var totalWorth = this.glimmerMap[items[i].itemHash] * items[i].getStackSize();
+
+            table.cell('Item name', items[i].name);
+            table.cell('Item stack size', items[i].getStackSize());
+            table.cell('Individual worth', this.glimmerMap[items[i].itemHash]);
+            table.cell('Total', totalWorth);
+            table.newRow();
+
+            total += totalWorth;
+        }
+
+        table.total('Total', undefined, undefined);
+        console.log(table.toString());
     }
 }

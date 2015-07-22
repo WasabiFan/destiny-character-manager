@@ -24,6 +24,13 @@
 
         return null;
     }
+
+    public getStackSize(): number {
+        if ((<StackableItem>this).stackSize != undefined)
+            return (<StackableItem>this).stackSize;
+
+        return 1;
+    }
 }
 
 export class StackableItem extends InventoryItem {
