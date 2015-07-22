@@ -1,9 +1,12 @@
-﻿import Vault = require('./bungie-api/vault-api');
+﻿import _ = require('underscore');
+
+import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
+import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Filters = require('./filters');
@@ -18,6 +21,21 @@ export class DestinyCommandConsole {
     private inventoryManager: InventoryManager.InventoryManager;
     private transferMan: InventoryItemTransferManager;
 
+    private glimmerMap: { [itemHash: string]: number } = {
+        // Axiomatic Beads
+        '2904517731': 200,
+        // House Banners
+        '269776572': 200,
+        // Network Keys
+        '1932910919': 200,
+        // Silken Codex
+        '3632619276': 200,
+        // Royal Amethyst (large version)
+        '51034763': 5000,
+        // Royal Amethyst (small version)
+        '1428782718': 2500
+    }
+
     constructor() {
         this.consoleOptions = new Console.CommandConsoleOptions();
         this.consoleOptions.commandRoot = new Console.Command(null, [
@@ -25,9 +43,11 @@ export class DestinyCommandConsole {
             new Console.Command('config', [
                 new Console.Command('init', [
                     new Console.Command('member', this.initMemberAction.bind(this)),
-                    //new Console.Command('characters', this.initCharacterAction.bind(this)),
+                    new Console.Command('characters', this.initCharacterAction.bind(this)),
                 ]),
                 new Console.Command('set', this.setAction.bind(this)),
+                new Console.Command('reload', this.reloadConfigAction.bind(this)),
+                new Console.Command('save', this.saveConfigAction.bind(this))
             ]),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
@@ -35,7 +55,9 @@ export class DestinyCommandConsole {
             new Console.Command('umark', this.unmarkAction.bind(this)),
             new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
-            new Console.Command('reset', this.resetAction.bind(this))
+            new Console.Command('reset', this.resetAction.bind(this)),
+            new Console.Command('calc-glimmer', this.calcGlimmerAction.bind(this))
+
         ]);
 
         this.consoleOptions.header = [
@@ -53,6 +75,11 @@ export class DestinyCommandConsole {
             console.log('Inventory data loaded.');
             this.console = new Console.CommandConsole(this.consoleOptions);
             this.console.start();
+        }).catch(error => {
+            console.log('Error encountered while loading data. Please restart the app and try again.');
+
+            // TODO: Tab in multiple lines (split and join)
+            console.log('    ' + error);
         });
     }
 
@@ -108,12 +135,16 @@ export class DestinyCommandConsole {
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(characterAlias, filter, Filters.FilterMode.Add);
+        this.reportDesignationValidity();
+
         Configuration.currentConfig.save();
     }
 
     private unmarkAction(fullArgs: string, filterStr: string) {
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
+        this.reportDesignationValidity();
+
         Configuration.currentConfig.save();
     }
 
@@ -137,6 +168,23 @@ export class DestinyCommandConsole {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
         return Configuration.currentConfig.loadMemberInfoFromApi(userName.join(' '), parsedNetwork);
+    }
+
+    private initCharacterAction(fullArgs: string): Promise<any> {
+        if (Configuration.currentConfig.authMember == undefined) {
+            var errorStr = 'You must load basic authentication info before querying for characters.';
+            return Promise.reject(new Error(errorStr));
+        }
+
+        return Configuration.currentConfig.loadDefaultCharactersFromApi();
+    }
+
+    private reloadConfigAction(fullArgs: string) {
+        Configuration.loadCurrentConfig();
+    }
+
+    private saveConfigAction(fullArgs: string) {
+        Configuration.currentConfig.save();
     }
 
     private printItemTable(items: Inventory.InventoryItem[]) {
@@ -189,7 +237,10 @@ export class DestinyCommandConsole {
         console.log(resultTable.toString());
     }
 
-    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[] {
+    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[]{
+        if (sourceAlias == null || sourceAlias == undefined)
+            return null;
+
         if (sourceAlias.toLowerCase() === 'vault') {
             return this.inventoryManager.getAllVaultItems();
         }
@@ -203,5 +254,56 @@ export class DestinyCommandConsole {
             return null;
 
         return this.inventoryManager.getAllCharacterItems(targetCharacter)
+    }
+
+    public reportDesignationValidity() {
+        var buckets = new BucketGearCollection(Configuration.currentConfig.designatedItems);
+        var errorMessages = [];
+
+        ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
+            var onlyExotics = _.select(bucketGroup, bucket => {
+                var items = buckets.getItems(bucket);
+                return items.length > 0 && _.every(items, item => item.tier === Inventory.InventoryItemTier.Exotic);
+            });
+
+            if (onlyExotics.length > 1)
+                // TODO: Report specific buckets
+                errorMessages.push('Multiple designated buckets contain only exotic items. There may be unexpected items equipped in these slots if you start a transfer.');
+        });
+
+        if (errorMessages.length > 0) {
+            console.warn('Your current configuration isn\'t valid!');
+            errorMessages.forEach(message => console.warn('    ' + message));
+        }
+    }
+
+    private calcGlimmerAction(fillArgs: string, characterAlias: string) {
+        var items = this.getItemsFromAlias(characterAlias);
+
+        if (items == null) {
+            console.log('Invalid source alias: ' + characterAlias);
+            return;
+        }
+
+        var table = new Table();
+        
+        var total = 0;
+        for (var i in items) {
+            if (this.glimmerMap[items[i].itemHash] == undefined)
+                continue;
+
+            var totalWorth = this.glimmerMap[items[i].itemHash] * items[i].getStackSize();
+
+            table.cell('Item name', items[i].name);
+            table.cell('Item stack size', items[i].getStackSize());
+            table.cell('Individual worth', this.glimmerMap[items[i].itemHash]);
+            table.cell('Total', totalWorth);
+            table.newRow();
+
+            total += totalWorth;
+        }
+
+        table.total('Total', undefined, undefined);
+        console.log(table.toString());
     }
 }

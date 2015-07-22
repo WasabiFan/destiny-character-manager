@@ -1,4 +1,6 @@
-﻿var destiny = require('destiny-client')();
+﻿import _ = require('underscore');
+
+var destiny = require('destiny-client')();
 import Bungie = require('./bungie-api/api-core');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Configuration = require('./config-manager');
@@ -25,6 +27,8 @@ export class InventoryManager {
                     workingState.characters[currentCharacter.id] = this.getCharacterFromBuckets(buckets, currentCharacter);
 
                     resolve();
+                }).catch((error) => {
+                    reject(error);
                 });
             });
             promises.push(promise);
@@ -38,6 +42,8 @@ export class InventoryManager {
                 workingState.vault.buckets = this.getBucketStatesFromBuckets(buckets);
 
                 resolve();
+            }).catch((error) => {
+                reject(error);
             });
         });
 
@@ -219,38 +225,41 @@ export class InventoryManager {
         this.lastQueueOperationPromise = newPromise;
     }
 
-    private printApiError(error: string) {
-        console.error('Destiny api error: ' + error);
-    }
-
-    private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, authHeaders, retryCounter) {
-        return new Promise((resolve, reject) => {
+    private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
+        var promise = new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                this.printApiError('Operation retry count exceeded on ' + (operation.type == QueuedOperationType.EquipItem ? 'equip item operation ' : 'move item operation ') + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4));
-                reject();
+                reject(new Error('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4)));
+                return;
             }
 
-            console.log('Request ' + ++this.requestCounter + ': Excecuting' + (retryCounter > 1 ? ' retry ' : ' ') + (operation.type == QueuedOperationType.EquipItem ? 'equip' : 'move') + ' operation on item "' + operation.context.item.name + '" with params: ' + JSON.stringify(operation.operationParams, null, 4));
+            console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
+                + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name + '" with params ' + );
 
-            destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res=> {
-                if (res.ErrorStatus != "Success") {
-                    this.printApiError(res.ErrorStatus);
-                    if (res.ErrorStatus == 'ThrottleLimitExceededMomentarily')
-                        this.getDestinyApiPromise(destinyApiFunction, operation, authHeaders, retryCounter + 1).then(() => {
+            if (Configuration.currentConfig.debugMode)
+                console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
+
+            destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
+                if (res.ErrorStatus == "Success")
+                    resolve();
+                else {
+                    if (res.ErrorStatus === 'ThrottleLimitExceededMomentarily') {
+                        console.log('Throttle limit exceeded; retrying ' + retryCounter);
+                        this.getDestinyApiPromise(destinyApiFunction, operation, retryCounter + 1).then(() => {
                             resolve();
+                        }).catch(error => {
+                            reject(error);
                         });
+                    }
                     else
-                        reject();
+                        reject(new Error('API call returned status code ' + res.ErrorStatus));
                 }
-                else
-                    resolve();
-            }).catch(err=> {
-                this.printApiError('Networking error');
-                this.getDestinyApiPromise(destinyApiFunction, operation, authHeaders, retryCounter + 1).then(() => {
-                    resolve();
-                });
+
+            }).catch(err => {
+                reject(new Error('Error thrown while attempting to call API: ' + err));
             })
         });
+
+        return promise;
     }
 
     private executeQueuedOperation(operation: QueuedOperation): Promise<any> {
@@ -265,8 +274,7 @@ export class InventoryManager {
                 break;
         }
 
-
-        return this.getDestinyApiPromise(destinyApiFunction, operation, Bungie.getAuthHeaders(), 1);
+        return this.getDestinyApiPromise(destinyApiFunction, operation, 1);
     }
 
     public getAllCharacterItems(targetCharacter: Character.Character): Inventory.InventoryItem[] {
@@ -311,7 +319,7 @@ export class InventoryManager {
         var selectedItems = filter.findMatchesInCollection(collectionToSearch);
 
         if (filterMode == Filters.FilterMode.Add) {
-            Configuration.currentConfig.designatedItems.push.apply(Configuration.currentConfig.designatedItems, selectedItems);
+            Configuration.currentConfig.designatedItems = _.union(Configuration.currentConfig.designatedItems, selectedItems);
         }
         else if (filterMode == Filters.FilterMode.Remove) {
             for (var selIndex in selectedItems) {

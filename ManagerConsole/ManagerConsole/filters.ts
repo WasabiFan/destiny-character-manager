@@ -35,6 +35,7 @@ export enum FilterQuantifier {
 
 export class FilterData {
     public static bucketFilterStrs = {
+        // Weapons
         'primary': Inventory.InventoryBucket.PrimaryWeapon,
         'pri': Inventory.InventoryBucket.PrimaryWeapon,
         'p': Inventory.InventoryBucket.PrimaryWeapon,
@@ -44,6 +45,19 @@ export class FilterData {
         'secondary': Inventory.InventoryBucket.SpecialWeapon,
         'heavy': Inventory.InventoryBucket.HeavyWeapon,
         'h': Inventory.InventoryBucket.HeavyWeapon,
+
+        // Armor
+        'helmet': Inventory.InventoryBucket.Helmet,
+        'helm': Inventory.InventoryBucket.Helmet,
+        'gauntlet': Inventory.InventoryBucket.Gauntlets,
+        'gauntlets': Inventory.InventoryBucket.Gauntlets,
+        'gaunt': Inventory.InventoryBucket.Gauntlets,
+        'chest': Inventory.InventoryBucket.ChestArmor,
+        'legs': Inventory.InventoryBucket.LegArmor,
+        'leg': Inventory.InventoryBucket.LegArmor,
+        'class': Inventory.InventoryBucket.ClassItem,
+
+        // Extras
         'vehicle': Inventory.InventoryBucket.Vehicle,
         'v': Inventory.InventoryBucket.Vehicle,
         'material': Inventory.InventoryBucket.Materials,
@@ -129,7 +143,6 @@ export class InventoryFilter {
         if (filterStr == undefined || filterStr.length <= 0)
             return;
         
-        // TODO: support quantifiers for bucket?
         var filterParts = filterStr.split(';');
         for (var i in filterParts) {
             var filterPart = new FilterPart(filterParts[i]);
