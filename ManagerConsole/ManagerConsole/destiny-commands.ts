@@ -21,6 +21,21 @@ export class DestinyCommandConsole {
     private inventoryManager: InventoryManager.InventoryManager;
     private transferMan: InventoryItemTransferManager;
 
+    private glimmerMap: { [itemHash: string]: number } = {
+        // Axiomatic Beads
+        '2904517731': 200,
+        // House Banners
+        '269776572': 200,
+        // Network Keys
+        '1932910919': 200,
+        // Silken Codex
+        '3632619276': 200,
+        // Royal Amethyst (large version)
+        '51034763': 5000,
+        // Royal Amethyst (small version)
+        '1428782718': 2500
+    }
+
     constructor() {
         this.consoleOptions = new Console.CommandConsoleOptions();
         this.consoleOptions.commandRoot = new Console.Command(null, [
@@ -42,7 +57,7 @@ export class DestinyCommandConsole {
             new Console.Command('move-marks', this.transferAction.bind(this)),
             new Console.Command('reset', this.resetAction.bind(this)),
             new Console.Command('calc-glimmer', this.calcGlimmerAction.bind(this))
-            
+
         ]);
 
         this.consoleOptions.header = [
@@ -213,7 +228,10 @@ export class DestinyCommandConsole {
         console.log(resultTable.toString());
     }
 
-    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[] {
+    public getItemsFromAlias(sourceAlias: string): Inventory.InventoryItem[]{
+        if (sourceAlias == null || sourceAlias == undefined)
+            return null;
+
         if (sourceAlias.toLowerCase() === 'vault') {
             return this.inventoryManager.getAllVaultItems();
         }
@@ -235,7 +253,7 @@ export class DestinyCommandConsole {
 
         ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
             var onlyExotics = _.select(bucketGroup, bucket => {
-                let items = buckets.getItems(bucket);
+                var items = buckets.getItems(bucket);
                 return items.length > 0 && _.every(items, item => item.tier === Inventory.InventoryItemTier.Exotic);
             });
 
@@ -258,6 +276,7 @@ export class DestinyCommandConsole {
             return;
         }
 
-        // TODO: Finish
+        var glimmerTotal = _.reduce(items, (memo: number, item: Inventory.InventoryItem) => memo + (this.glimmerMap[item.itemHash] || 0), 0);
+        console.log(glimmerTotal);
     }
 }
