@@ -43,7 +43,7 @@ export class DestinyCommandConsole {
             new Console.Command('config', [
                 new Console.Command('init', [
                     new Console.Command('member', this.initMemberAction.bind(this)),
-                    //new Console.Command('characters', this.initCharacterAction.bind(this)),
+                    new Console.Command('characters', this.initCharacterAction.bind(this)),
                 ]),
                 new Console.Command('set', this.setAction.bind(this)),
                 new Console.Command('reload', this.reloadConfigAction.bind(this)),
@@ -168,6 +168,15 @@ export class DestinyCommandConsole {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
         return Configuration.currentConfig.loadMemberInfoFromApi(userName.join(' '), parsedNetwork);
+    }
+
+    private initCharacterAction(fullArgs: string): Promise<any> {
+        if (Configuration.currentConfig.authMember == undefined) {
+            var errorStr = 'You must load basic authentication info before querying for characters.';
+            return Promise.reject(new Error(errorStr));
+        }
+
+        return Configuration.currentConfig.loadDefaultCharactersFromApi();
     }
 
     private reloadConfigAction(fullArgs: string) {

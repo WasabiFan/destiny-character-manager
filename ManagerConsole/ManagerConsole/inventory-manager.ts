@@ -224,7 +224,7 @@ export class InventoryManager {
     private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
         var promise = new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                reject('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' operation with params ' + JSON.stringify(operation.operationParams, null, 4));
+                reject(new Error('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' operation with params ' + JSON.stringify(operation.operationParams, null, 4)));
                 return;
             }
 
@@ -247,11 +247,11 @@ export class InventoryManager {
                         });
                     }
                     else
-                        reject('API call returned status code ' + res.ErrorStatus);
+                        reject(new Error('API call returned status code ' + res.ErrorStatus));
                 }
 
             }).catch(err => {
-                reject('Error thrown while attempting to call API: ' + err);
+                reject(new Error('Error thrown while attempting to call API: ' + err));
             })
         });
 

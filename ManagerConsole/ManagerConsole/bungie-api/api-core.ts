@@ -43,7 +43,7 @@ class BungieApiCore {
             // TODO: Figure out these extra params 
             request(opts, (_, __, data) => {
                 if (data == undefined) {
-                    reject('No result returned from call to load from endpoint "' + endpointUrl + '". Check to make sure that you are connected to the internet.');
+                    reject(new Error('No result returned from call to load from endpoint "' + endpointUrl + '". Check to make sure that you are connected to the internet.'));
                     return;
                 }
 

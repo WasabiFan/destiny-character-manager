@@ -37,6 +37,12 @@ export class CommandConsole {
             else
                 actionResult.then(() => {
                     this.reopenPrompt();
+                }).catch(error => {
+                    if (error instanceof Error)
+                        console.error((<Error>error).message);
+                    else console.error(error);
+
+                    this.reopenPrompt();
                 });
         }
         else {
