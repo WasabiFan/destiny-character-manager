@@ -233,7 +233,7 @@ export class InventoryManager {
             }
 
             console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
-                + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name + '" with params ' + );
+                + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
 
             if (Configuration.currentConfig.debugMode)
                 console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
