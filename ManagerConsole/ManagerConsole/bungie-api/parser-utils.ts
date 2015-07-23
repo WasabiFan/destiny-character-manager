@@ -190,7 +190,7 @@ class ParserUtils {
             return item.bucket;
 
         // Non-standard weapons
-        switch (item.itemHash) {
+        switch (String(item.itemHash)) {
             // Universal Remote
             case '1389842217':
             // No Land Beyond

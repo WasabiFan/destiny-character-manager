@@ -11,8 +11,8 @@
         newItem.name = plainObj.name;
         newItem.tier = plainObj.tier;
         newItem.type = plainObj.type;
-        newItem.instanceId = plainObj.instanceId;
-        newItem.itemHash = plainObj.itemHash;
+        newItem.instanceId = String(plainObj.instanceId);
+        newItem.itemHash = String(plainObj.itemHash);
         newItem.bucket = plainObj.bucket;
 
         return newItem;

@@ -1,4 +1,6 @@
-﻿import Inventory = require('./bungie-api/api-objects/inventory');
+﻿import _ = require('underscore');
+
+import Inventory = require('./bungie-api/api-objects/inventory');
 import AppConfiguration = require('./config-manager');
 import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
@@ -12,6 +14,7 @@ var destiny = require('destiny-client')();
 
 class InventoryItemTransferManager {
     private inventoryMan: InventoryManager.InventoryManager;
+    private promiseParams;
 
     constructor(inventoryMan: InventoryManager.InventoryManager) {
         this.inventoryMan = inventoryMan;
@@ -27,7 +30,7 @@ class InventoryItemTransferManager {
                 (objectsById[name = obj[uniqueIdentifierAttributeName]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref,(function () {
+        return (ref = []).concat.apply(ref, (function () {
             var results;
             results = [];
             for (id in objectsById) {
@@ -50,7 +53,7 @@ class InventoryItemTransferManager {
                 (objectsById[name = obj[uniqueIdentifierAttributeName]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref,(function () {
+        return (ref = []).concat.apply(ref, (function () {
             var results;
             results = [];
             for (id in objectsById) {
@@ -63,7 +66,7 @@ class InventoryItemTransferManager {
         })());
     }
 
-    private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[]) {
+    private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[], bucket?: Inventory.InventoryBucket) {
         // TODO: Remove all this duplicate code
         // It looks like we can always use both attribs
         var checkAttributeNames = ['instanceId'];
@@ -82,12 +85,12 @@ class InventoryItemTransferManager {
                     (objectsById[name = obj[checkAttributeNames.join('')]] || (objectsById[name] = [])).push(obj);
             }
         }
-        return (ref = []).concat.apply(ref,(function () {
+        return (ref = []).concat.apply(ref, (function () {
             var results;
             results = [];
             for (id in objectsById) {
                 arr = objectsById[id];
-                if (arr.length === 1) {
+                if (arr.length === 1 && ParserUtils.getGearBucketForVaultItem(arr[0])) {
                     results.push(arr[0]);
                 }
             }
@@ -190,13 +193,13 @@ class InventoryItemTransferManager {
         return -1;
     }
 
-    private prepForTransfer(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, targetCharacter: Character.Character, bucketDesignatedItems: Inventory.InventoryItem[]) {
+    private prepForTransfer(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, targetCharacter: Character.Character, bucketDesignatedItems: Inventory.InventoryItem[], reject): Promise<any> {
         var state = this.inventoryMan.currentState;
 
         var fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, targetCharacter);
         if (fullInfo.vaultFull) {
             if (this.moveAnyItemFromVault(currentBucket, currentVaultBucket, targetCharacter, bucketDesignatedItems, []) == -1) {
-                console.error('No space is availible in inventory or vault to effect transfer');
+                this.promiseParams.reject(new Error('No space is availible in inventory or vault to effect transfer'));
                 return;
             }
         }
@@ -204,8 +207,13 @@ class InventoryItemTransferManager {
         fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, targetCharacter);
         var targetBucket = state.characters[targetCharacter.id].buckets[currentBucket];
         var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', targetBucket.contents, AppConfiguration.currentConfig.designatedItems);
+        var exoticEquipped;
+        if (intersection.length > 0)
+            exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter);
         for (var i = 0; i < intersection.length; i++) {
-            if (intersection[i].getIsEquipped() == false) {
+            if (intersection[i].getIsEquipped() == true)
+                break;
+            if (intersection[i].getIsEquipped() == false && !(intersection[i].tier == Inventory.InventoryItemTier.Exotic && exoticEquipped == true)) {
                 this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], intersection[i]);
                 break;
             }
@@ -228,7 +236,7 @@ class InventoryItemTransferManager {
         }
         var vaultIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.vault.buckets[currentVaultBucket].contents, bucketDesignatedItems);
         for (var i = 0; i < vaultIntersection.length; i++)
-            items.push({ item: vaultIntersection[j], char: "-1" });
+            items.push({ item: vaultIntersection[i], char: "-1" });
         for (var i = 0; i < items.length; i++) {
             var targetIntersection: Inventory.GearItem[] = this.intersectArraysOfObjects('instanceId', state.characters[targetCharacter.id].buckets[currentBucket].contents, AppConfiguration.currentConfig.designatedItems);
             if (targetIntersection.length > 8)
@@ -261,11 +269,47 @@ class InventoryItemTransferManager {
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == true)
                 return;
-            else if (intersection[i].getIsEquipped() == false) {
+            if (intersection[i].tier == Inventory.InventoryItemTier.Exotic)
+                continue;
+            if (intersection[i].getIsEquipped() == false) {
                 this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], intersection[i]);
                 return;
             }
         }
+        var exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter);
+        if (!exoticEquipped) {
+            for (var i = 0; i < intersection.length; i++) {
+                if (intersection[i].getIsEquipped() == true)
+                    return;
+                else if (intersection[i].getIsEquipped() == false) {
+                    this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], intersection[i]);
+                    return;
+                }
+            }
+        }
+        else {
+            // TODO: Add system to remove equipped exotic if possible
+        }
+    }
+
+    private getExoticEquipped(state: InventoryManager.InventoryState, bucket: Inventory.InventoryBucket, target: Character.Character) {
+        for (var exoticBucketIndex = 0; exoticBucketIndex < ParserUtils.exoticBucketGroups.length; exoticBucketIndex++) {
+            if (ParserUtils.exoticBucketGroups[exoticBucketIndex].indexOf(bucket) == -1)
+                continue;
+            for (var bucketIndex = 0; bucketIndex < ParserUtils.exoticBucketGroups[exoticBucketIndex].length; bucketIndex++) {
+                for (var itemIndex = 0; itemIndex < state.characters[target.id].buckets[ParserUtils.exoticBucketGroups[exoticBucketIndex][bucketIndex]].contents.length; itemIndex++) {
+                    var item = state.characters[target.id].buckets[ParserUtils.exoticBucketGroups[exoticBucketIndex][bucketIndex]].contents[itemIndex];
+                    if (item.getIsEquipped() == true && item.tier == Inventory.InventoryItemTier.Exotic) {
+                        return {
+                            'exoticEquipped': true, 'bucketIndex': ParserUtils.exoticBucketGroups[exoticBucketIndex][bucketIndex]
+                        };
+                    }
+                }
+            }
+        }
+        return {
+            'exoticEquipped': false
+        };
     }
 
     private moveEquippedItems(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, targetCharacter: Character.Character, bucketDesignatedItems: Inventory.InventoryItem[]) {
@@ -290,7 +334,17 @@ class InventoryItemTransferManager {
                 var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(state.vault.buckets[currentVaultBucket].contents, bucketDesignatedItems);
                 var vaultTemp;
                 if (vaultTemps.length > 0) {
-                    vaultTemp = vaultTemps[0];
+                    for (var j = 0; j < vaultTemps.length; j++) {
+                        if (vaultTemps[j].tier != Inventory.InventoryItemTier.Exotic) {
+                            vaultTemp = vaultTemps[j];
+                            break;
+                        }
+                    }
+                    if (vaultTemp == undefined)
+                        for (var j = 0; j < vaultTemps.length; j++) {
+                            vaultTemp = vaultTemps[j];
+                            break;
+                        }
                 }
                 else {
                     for (var j = 0; j < characters.length; j++) {
@@ -340,37 +394,52 @@ class InventoryItemTransferManager {
     }
 
     public transferDesignatedItems(target: Character.Character) {
-        if (!this.inventoryMan.isLoaded)
-            // TODO: Return error instead
-            throw new Error('The inventory must be loaded before transferring items.');
+        return new Promise((resolve, reject) => {
+            this.promiseParams = { 'resolve': resolve, 'reject': reject };
+            if (!this.inventoryMan.isLoaded)
+                reject(new Error('The inventory must be loaded before transferring items.'));
 
-        var state = this.inventoryMan.currentState;
-        var characters = AppConfiguration.currentConfig.characters;
+            var state = this.inventoryMan.currentState;
+            var characters = AppConfiguration.currentConfig.characters;
 
-        // Find all designated items
-        var designatedItems = AppConfiguration.currentConfig.designatedItems;
-        var designatedBuckets: Inventory.InventoryBucket[] = [];
-        for (var i = 0; i < designatedItems.length; i++) {
-            if (designatedBuckets.indexOf(designatedItems[i].bucket) == -1)
-                designatedBuckets.push(designatedItems[i].bucket);
-        }
-        // Loop through buckets
-        for (var i = 0; i < designatedBuckets.length; i++) {
-            var currentBucket = designatedBuckets[i];
-            if (currentBucket == Inventory.InventoryBucket.GhostShell || currentBucket == Inventory.InventoryBucket.Subclass)
-                continue;
-            var bucketDesignatedItems: Inventory.InventoryItem[] = [];
-            for (var j = 0; j < designatedItems.length; j++)
-                if (designatedItems[j].bucket == currentBucket)
-                    bucketDesignatedItems.push(designatedItems[j]);
+            // Find all designated items
+            var designatedItems = AppConfiguration.currentConfig.designatedItems;
+            var designatedBuckets: Inventory.InventoryBucket[] = [];
+            var designatedBucketItems: Inventory.InventoryItem[][] = [];
+            for (var i = 0; i < designatedItems.length; i++) {
+                if (designatedBuckets.indexOf(designatedItems[i].bucket) == -1)
+                    designatedBuckets.push(designatedItems[i].bucket);
+                if (!(designatedBucketItems[designatedItems[i].bucket]))
+                    designatedBucketItems[designatedItems[i].bucket] = [];
+                designatedBucketItems[designatedItems[i].bucket].push(designatedItems[i]);
+            }
+            ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
+                var onlyExotics = _.select(bucketGroup, bucket => {
+                    var items = designatedBucketItems[bucket] || [];
+                    return items.length > 0 && _.every(items, item => item.tier === Inventory.InventoryItemTier.Exotic);
+                });
+                if (onlyExotics.length > 1)
+                    reject(new Error('There must be at least three armor buckets and two weapon buckets with non- exotic items in them'));
+            });
+            // Loop through buckets
+            for (var i = 0; i < designatedBuckets.length; i++) {
+                var currentBucket = designatedBuckets[i];
+                if (currentBucket == Inventory.InventoryBucket.GhostShell || currentBucket == Inventory.InventoryBucket.Subclass)
+                    continue;
+                var bucketDesignatedItems: Inventory.InventoryItem[] = designatedBucketItems[currentBucket];
 
-            var currentVaultBucket = ParserUtils.getVaultBucketFromGearBucket(currentBucket);
-            this.prepForTransfer(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
-            this.moveUnequippedItems(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
-            this.equipDesignatedItem(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
-            this.moveEquippedItems(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
-            this.moveTargetTemps(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
-        }
+                var currentVaultBucket = ParserUtils.getVaultBucketFromGearBucket(currentBucket);
+                this.prepForTransfer(currentBucket, currentVaultBucket, target, bucketDesignatedItems, reject);
+                this.moveUnequippedItems(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
+                this.equipDesignatedItem(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
+                this.moveEquippedItems(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
+                this.moveTargetTemps(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
+            }
+
+            this.inventoryMan.getCurrentQueueTerminationPromise().then(() => {
+                resolve();
+            }).catch(reject);
+        });
     }
 }
 
