@@ -41,7 +41,7 @@ class BungieApiCore {
         var promise = new Promise<string>((resolve, reject) => {
 
             // TODO: Figure out these extra params 
-            request(opts, (_, __, data) => {
+            request(opts, (__, ___, data) => {
                 if (data == undefined) {
                     reject(new Error('No result returned from call to load from endpoint "' + endpointUrl + '". Check to make sure that you are connected to the internet.'));
                     return;
