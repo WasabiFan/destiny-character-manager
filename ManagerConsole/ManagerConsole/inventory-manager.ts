@@ -6,7 +6,7 @@ import Inventory = require('./bungie-api/api-objects/inventory');
 import Configuration = require('./config-manager');
 import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
-import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
+import GearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import Character = require('./bungie-api/api-objects/character');
 import ParserUtils = require('./bungie-api/parser-utils');
 import Filters = require('./filters');
@@ -37,9 +37,9 @@ export class InventoryManager {
         var vaultPromise = new Promise((resolve, reject) => {
             Vault.getItems(Configuration.currentConfig.characters[0]).then(items => {
                 this.workingState.vault = new VaultInventoryState();
-                var buckets = new BucketGearCollection(items);
+                var buckets = new GearCollection.BucketGearCollection(items);
 
-                workingState.vault.buckets = this.getBucketStatesFromBuckets(buckets);
+                workingState.vault.bucketCollection = buckets;
 
                 resolve();
             }).catch((error) => {
@@ -60,32 +60,12 @@ export class InventoryManager {
         return this.workingState != undefined;
     }
 
-    private getCharacterFromBuckets(buckets: BucketGearCollection, character: Character.Character): CharacterInventoryState {
+    private getCharacterFromBuckets(buckets: GearCollection.BucketGearCollection, character: Character.Character): CharacterInventoryState {
         var characterInventory = new CharacterInventoryState();
         characterInventory.character = character;
-        characterInventory.buckets = this.getBucketStatesFromBuckets(buckets, character);
+        characterInventory.bucketCollection = buckets;
 
         return characterInventory;
-    }
-
-    private getBucketStatesFromBuckets(buckets: BucketGearCollection, parent?: Character.Character): { [bucket: number]: InventoryBucketState } {
-        var bucketMap = buckets.getBucketMap();
-        var result: { [bucket: number]: InventoryBucketState } = {};
-
-        for (var bucketId in bucketMap) {
-            var newBucket = new InventoryBucketState();
-            newBucket.bucketType = (<Inventory.InventoryBucket>Number(bucketId));
-            newBucket.capacity = ParserUtils.findCapacityForBucket(newBucket.bucketType);
-            newBucket.parentCharacter = parent;
-
-            for (var gearIndex in bucketMap[bucketId]) {
-                newBucket.contents.push(bucketMap[bucketId][gearIndex]);
-            }
-
-            result[Number(bucketId)] = newBucket;
-        }
-
-        return result;
     }
 
 
@@ -340,20 +320,26 @@ export class InventoryState {
 }
 
 export class CharacterInventoryState {
-    public buckets: { [bucket: number]: InventoryBucketState } = {};
+    public get buckets(): { [bucket: number]: GearCollection.InventoryBucketState } {
+        if (_.isUndefined(this.bucketCollection))
+            return undefined;
+
+        return this.bucketCollection.getBucketMap();
+    }
+
+    public bucketCollection: GearCollection.BucketGearCollection;
     public character: Character.Character;
 }
 
 export class VaultInventoryState {
-    public buckets: { [bucket: number]: InventoryBucketState } = {};
-}
+    public get buckets(): { [bucket: number]: GearCollection.InventoryBucketState } {
+        if (_.isUndefined(this.bucketCollection))
+            return undefined;
 
-export class InventoryBucketState {
-    public capacity: number;
-    public contents: Inventory.InventoryItem[] = [];
-    public bucketType: Inventory.InventoryBucket;
+        return this.bucketCollection.getBucketMap();
+    }
 
-    public parentCharacter: Character.Character;
+    public bucketCollection: GearCollection.BucketGearCollection;
 }
 
 export enum QueuedOperationType {

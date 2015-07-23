@@ -6,7 +6,7 @@ import Inventory = require('./bungie-api/api-objects/inventory');
 import Character = require('./bungie-api/api-objects/character');
 import Configuration = require('./config-manager');
 import Console = require('./command-console');
-import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
+import GearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import InventoryManager = require('./inventory-manager');
 import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
 import Filters = require('./filters');
@@ -86,12 +86,17 @@ export class DestinyCommandConsole {
     private setAction(fullArgs: string, propName: string, propValue: string) {
         propName = propName.toLowerCase();
         var wholeVal = fullArgs.substring(fullArgs.indexOf(' ') + 1);
-
+        
         switch (propName) {
             case 'cookie':
                 Configuration.currentConfig.authCookie = wholeVal;
                 break;
+            case 'debug':
+                Configuration.currentConfig.debugMode = propValue == 'true';
+                break;
         }
+
+        Configuration.currentConfig.save();
     }
 
     private listAction(fullArgs: string, characterAlias: string, filterStr: string) {
@@ -257,7 +262,7 @@ export class DestinyCommandConsole {
     }
 
     public reportDesignationValidity() {
-        var buckets = new BucketGearCollection(Configuration.currentConfig.designatedItems);
+        var buckets = new GearCollection.BucketGearCollection(Configuration.currentConfig.designatedItems);
         var errorMessages = [];
 
         ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {

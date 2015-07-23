@@ -4,7 +4,7 @@ import cheerio = require('cheerio');
 import Bungie = require('./api-core');
 import Inventory = require('./api-objects/inventory');
 import ParserUtils = require('./parser-utils');
-import BucketGearCollection = require('./api-objects/bucket-gear-collection');
+import GearCollection = require('./api-objects/bucket-gear-collection');
 import Characters = require('./api-objects/character');
 import Configuration = require('../config-manager');
 
@@ -40,16 +40,13 @@ class GearApi {
         return promise;
     }
 
-    public static getItems(targetCharacter: Characters.Character): Promise<BucketGearCollection> {
+    public static getItems(targetCharacter: Characters.Character): Promise<GearCollection.BucketGearCollection> {
         var promise = new Promise((resolve, reject) => {
             var gearPromise = this.getItemsFromSinglePage(targetCharacter, GearEndpointType.Gear);
             var inventoryPromise = this.getItemsFromSinglePage(targetCharacter, GearEndpointType.Inventory);
             Promise.all([gearPromise, inventoryPromise]).then((responseArr: Inventory.InventoryItem[][]) => {
-                var buckets = new BucketGearCollection();
                 var allItems = responseArr[0].concat(responseArr[1]);
-                for (var i in allItems) {
-                    buckets.addItem(allItems[i]);
-                }
+                var buckets = new GearCollection.BucketGearCollection(allItems, targetCharacter);
 
                 resolve(buckets);
             }).catch((error) => {
