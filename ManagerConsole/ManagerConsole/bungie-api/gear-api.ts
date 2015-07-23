@@ -57,16 +57,23 @@ class GearApi {
         return promise;
     }
 
-    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket, endpointType: GearEndpointType): Inventory.GearItem {
-        var item: Inventory.GearItem = new Inventory.GearItem();
+    private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket, endpointType: GearEndpointType): Inventory.InventoryItem {
+        var item: Inventory.InventoryItem = new Inventory.InventoryItem();
 
         if (ParserUtils.isWeapon(currentBucket)) {
             item = new Inventory.WeaponItem();
             (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
         }
+        else if (ParserUtils.isInventory(currentBucket)) {
+            item = new Inventory.StackableItem();
+            var stackSizeDiv = itemCheerio.find('div.stackSize');
+            if (stackSizeDiv.length > 0)
+                (<Inventory.StackableItem> item).stackSize = parseInt(stackSizeDiv.first().text());
+        }
 
         if (endpointType == GearEndpointType.Gear)
-            item.isEquipped = itemCheerio.hasClass('equipped');
+            (<Inventory.GearItem> item).isEquipped = itemCheerio.hasClass('equipped');
+
         item.name = itemCheerio.find('.itemName').text();
         item.instanceId = itemCheerio.data('iteminstanceid');
         item.itemHash = itemCheerio.data('itemhash');

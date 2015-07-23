@@ -254,10 +254,13 @@ export class DestinyCommandConsole {
                 chalkify = chalkify[chalkChain[chalkIndex]];
             }
 
+            var stackSize = items[i].getStackSize();
+
             resultTable.cell('', chalkify('█') + (items[i].getIsEquipped() == true ? '>' : ''));
             resultTable.cell('Name', items[i].name);
             resultTable.cell('Tier', Inventory.InventoryItemTier[items[i].tier]);
             resultTable.cell('Type', Inventory.InventoryItemType[items[i].type]);
+            resultTable.cell('Stack size', stackSize == 1 ? '' : stackSize);
             // TODO: designated
             resultTable.newRow();
         }
