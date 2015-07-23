@@ -1,11 +1,5 @@
-﻿import Vault = require('./bungie-api/vault-api');
-import Gear = require('./bungie-api/gear-api');
-import Inventory = require('./bungie-api/api-objects/inventory');
-import Character = require('./bungie-api/api-objects/character');
-import Configuration = require('./config-manager');
-import Console = require('./command-console');
-import InventoryManager = require('./inventory-manager');
-import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
+﻿// Bungie API
+import Inventory = require('../bungie-api/api-objects/inventory');
 
 export class FilterUtils {
     public static customIndexOf<T>(collection: T[], selector: (item: T) => boolean): number {

@@ -1,26 +1,34 @@
 ﻿import _ = require('underscore');
-
-import Vault = require('./bungie-api/vault-api');
-import Gear = require('./bungie-api/gear-api');
-import Inventory = require('./bungie-api/api-objects/inventory');
-import Character = require('./bungie-api/api-objects/character');
-import Configuration = require('./config-manager');
-import Console = require('./command-console');
-import GearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
-import InventoryManager = require('./inventory-manager');
-import InventoryItemTransferManager = require('./inventory-item-transfer-manager');
-import Filters = require('./filters');
-import ParserUtils = require('./bungie-api/parser-utils');
+var package = require('../package.json');
+import chalk = require('chalk');
 import Table = require('easy-table');
-import Chalk = require('chalk');
-import Errors = require('./errors');
-var package = require('./package.json');
+
+// Bungie API
+import Inventory = require('../bungie-api/api-objects/inventory');
+import Character = require('../bungie-api/api-objects/character');
+import GearCollection = require('../bungie-api/api-objects/bucket-gear-collection');
+import Bungie = require('../bungie-api/api-core');
+import Vault = require('../bungie-api/vault-api');
+import Gear = require('../bungie-api/gear-api');
+import ParserUtils = require('../bungie-api/parser-utils');
+
+// Utils
+import Configuration = require('../utils/config-manager');
+import Console = require('../utils/command-console');
+import Errors = require('../utils/errors');
+
+// API helpers
+import InventoryTransferManager = require('../api-helpers/inventory-transfer-manager');
+import InventoryManager = require('../api-helpers/inventory-manager');
+
+// App core
+import Filters = require('../app-core/filters');
 
 export class DestinyCommandConsole {
     private console: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
     private inventoryManager: InventoryManager.InventoryManager;
-    private transferMan: InventoryItemTransferManager;
+    private transferMan: InventoryTransferManager;
 
     private glimmerMap: { [itemHash: string]: number } = {
         // Axiomatic Beads
@@ -68,7 +76,7 @@ export class DestinyCommandConsole {
         ];
 
         this.inventoryManager = new InventoryManager.InventoryManager();
-        this.transferMan = new InventoryItemTransferManager(this.inventoryManager);
+        this.transferMan = new InventoryTransferManager(this.inventoryManager);
     }
 
     public start() {
@@ -241,7 +249,7 @@ export class DestinyCommandConsole {
                     break;
             }
 
-            var chalkify: any = Chalk.gray;
+            var chalkify: any = chalk.gray;
             for (var chalkIndex in chalkChain) {
                 chalkify = chalkify[chalkChain[chalkIndex]];
             }

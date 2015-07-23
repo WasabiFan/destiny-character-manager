@@ -1,19 +1,19 @@
 ﻿import _ = require('underscore');
-
-import Inventory = require('./bungie-api/api-objects/inventory');
-import AppConfiguration = require('./config-manager');
-import Vault = require('./bungie-api/vault-api');
-import Gear = require('./bungie-api/gear-api');
-import BucketGearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
-import Character = require('./bungie-api/api-objects/character');
-import Membership = require('./bungie-api/api-objects/membership');
-import ApiCore = require('./bungie-api/api-core');
-import InventoryManager = require('./inventory-manager');
-import ParserUtils = require('./bungie-api/parser-utils');
-import Errors = require('./errors');
 var destiny = require('destiny-client')();
 
-class InventoryItemTransferManager {
+// Bungie API
+import Inventory = require('../bungie-api/api-objects/inventory');
+import Character = require('../bungie-api/api-objects/character');
+import ParserUtils = require('../bungie-api/parser-utils');
+
+// Utils
+import AppConfiguration = require('../utils/config-manager');
+import Errors = require('../utils/errors');
+
+// API helpers
+import InventoryManager = require('./inventory-manager');
+
+class InventoryTransferManager {
     private inventoryMan: InventoryManager.InventoryManager;
     private promiseParams;
 
@@ -444,4 +444,4 @@ class InventoryItemTransferManager {
     }
 }
 
-export = InventoryItemTransferManager;
+export = InventoryTransferManager;

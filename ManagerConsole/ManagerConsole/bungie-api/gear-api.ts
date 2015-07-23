@@ -6,7 +6,7 @@ import Inventory = require('./api-objects/inventory');
 import ParserUtils = require('./parser-utils');
 import GearCollection = require('./api-objects/bucket-gear-collection');
 import Characters = require('./api-objects/character');
-import Configuration = require('../config-manager');
+import Configuration = require('../utils/config-manager');
 
 class GearApi {
     private static getItemsFromSinglePage(targetCharacter: Characters.Character, endpointType: GearEndpointType) {

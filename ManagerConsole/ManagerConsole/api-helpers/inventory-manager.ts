@@ -2,16 +2,21 @@
 import stackTrace = require('stack-trace');
 var destiny = require('destiny-client')();
 
-import Bungie = require('./bungie-api/api-core');
-import Inventory = require('./bungie-api/api-objects/inventory');
-import Configuration = require('./config-manager');
-import Vault = require('./bungie-api/vault-api');
-import Gear = require('./bungie-api/gear-api');
-import GearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
-import Character = require('./bungie-api/api-objects/character');
-import ParserUtils = require('./bungie-api/parser-utils');
-import Errors = require('./errors');
-import Filters = require('./filters');
+// Bungie API
+import Inventory = require('../bungie-api/api-objects/inventory');
+import Character = require('../bungie-api/api-objects/character');
+import GearCollection = require('../bungie-api/api-objects/bucket-gear-collection');
+import Bungie = require('../bungie-api/api-core');
+import Vault = require('../bungie-api/vault-api');
+import Gear = require('../bungie-api/gear-api');
+import ParserUtils = require('../bungie-api/parser-utils');
+
+// Utils
+import Configuration = require('../utils/config-manager');
+import Errors = require('../utils/errors');
+
+// App core
+import Filters = require('../app-core/filters');
 
 export class InventoryManager {
     private workingState: InventoryState;

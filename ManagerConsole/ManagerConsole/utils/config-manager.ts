@@ -1,7 +1,7 @@
 ﻿import fs = require('fs');
-import Membership = require('./bungie-api/api-objects/membership');
-import Character = require('./bungie-api/api-objects/character');
-import Inventory = require('./bungie-api/api-objects/inventory');
+import Membership = require('../bungie-api/api-objects/membership');
+import Character = require('../bungie-api/api-objects/character');
+import Inventory = require('../bungie-api/api-objects/inventory');
 var destiny = require('destiny-client');
 
 class AppConfiguration {

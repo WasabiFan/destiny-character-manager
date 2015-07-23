@@ -9,8 +9,8 @@ import _ = require('underscore');
 
 import Membership = require('./api-objects/membership');
 import Character = require('./api-objects/character');
-import Configuration = require('../config-manager');
-import Errors = require('../errors');
+import Configuration = require('../utils/config-manager');
+import Errors = require('../utils/errors');
 
 class BungieApiCore {
 

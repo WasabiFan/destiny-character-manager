@@ -1,4 +1,4 @@
-﻿import InventoryManager = require('./inventory-manager');
+﻿import InventoryManager = require('../api-helpers/inventory-manager');
 import chalk = require('chalk');
 import stackTrace = require('stack-trace');
 import util = require('util');

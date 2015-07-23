@@ -41,17 +41,17 @@
     <Content Include="package.json" />
     <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
-    <TypeScriptCompile Include="command-console.ts" />
-    <TypeScriptCompile Include="config-manager.ts" />
+    <TypeScriptCompile Include="utils\command-console.ts" />
+    <TypeScriptCompile Include="utils\config-manager.ts" />
     <TypeScriptCompile Include="bungie-api\gear-api.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\inventory.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
     <TypeScriptCompile Include="bungie-api\parser-utils.ts" />
-    <TypeScriptCompile Include="destiny-commands.ts" />
-    <TypeScriptCompile Include="errors.ts" />
-    <TypeScriptCompile Include="filters.ts" />
-    <TypeScriptCompile Include="inventory-item-transfer-manager.ts" />
-    <TypeScriptCompile Include="inventory-manager.ts" />
+    <TypeScriptCompile Include="app-core\destiny-commands.ts" />
+    <TypeScriptCompile Include="utils\errors.ts" />
+    <TypeScriptCompile Include="app-core\filters.ts" />
+    <TypeScriptCompile Include="api-helpers\inventory-transfer-manager.ts" />
+    <TypeScriptCompile Include="api-helpers\inventory-manager.ts" />
     <TypeScriptCompile Include="Scripts\typings\chalk\chalk.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\easy-table\easy-table.d.ts" />
@@ -64,6 +64,9 @@
   <ItemGroup>
     <Folder Include="bungie-api\" />
     <Folder Include="bungie-api\api-objects\" />
+    <Folder Include="api-helpers\" />
+    <Folder Include="app-core\" />
+    <Folder Include="utils\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
     <Folder Include="Scripts\typings\chalk\" />
