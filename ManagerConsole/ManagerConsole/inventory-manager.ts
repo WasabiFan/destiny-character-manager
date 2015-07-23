@@ -194,13 +194,15 @@ export class InventoryManager {
                         this.lastQueueOperationPromise = null;
                         resolve();
                     }, 600);
+                }).catch((err) => {
+                    reject(err);
                 });
             }
 
             if (_.isUndefined(this.lastQueueOperationPromise) || _.isNull(this.lastQueueOperationPromise))
                 executeAction();
             else
-                this.lastQueueOperationPromise.then(executeAction);
+                this.lastQueueOperationPromise.then(executeAction).catch(reject);
         });
 
         this.lastQueueOperationPromise = newPromise;

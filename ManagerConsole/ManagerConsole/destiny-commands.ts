@@ -142,14 +142,14 @@ export class DestinyCommandConsole {
         console.log('Buckets:  ' + (bucketStrs.length > 0 ? bucketStrs.join(', ') : 'All'));
     }
 
-    private transferAction(fullArgs: string, characterAlias: string) {
+    private transferAction(fullArgs: string, characterAlias: string): Promise<any> {
         var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
         if (targetCharacter == null) {
             console.log('Invalid character alias: ' + characterAlias);
             return;
         }
 
-        this.transferMan.transferDesignatedItems(targetCharacter);
+        return this.transferMan.transferDesignatedItems(targetCharacter);
     }
 
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {

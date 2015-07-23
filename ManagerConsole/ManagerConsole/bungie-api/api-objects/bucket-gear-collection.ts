@@ -75,7 +75,7 @@ export class InventoryBucketState {
     public parentCharacter: Character.Character;
 
     public constructor(bucketType: Inventory.InventoryBucket) {
-        this._capacity = ParserUtils.findCapacityForBucket(this.bucketType);
         this.bucketType = bucketType;
+        this._capacity = ParserUtils.findCapacityForBucket(this.bucketType);
     }
 }
