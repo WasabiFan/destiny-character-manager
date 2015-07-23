@@ -48,6 +48,7 @@
     <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
     <TypeScriptCompile Include="bungie-api\parser-utils.ts" />
     <TypeScriptCompile Include="destiny-commands.ts" />
+    <TypeScriptCompile Include="errors.ts" />
     <TypeScriptCompile Include="filters.ts" />
     <TypeScriptCompile Include="inventory-item-transfer-manager.ts" />
     <TypeScriptCompile Include="inventory-manager.ts" />

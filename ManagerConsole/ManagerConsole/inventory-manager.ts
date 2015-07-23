@@ -9,6 +9,7 @@ import Gear = require('./bungie-api/gear-api');
 import GearCollection = require('./bungie-api/api-objects/bucket-gear-collection');
 import Character = require('./bungie-api/api-objects/character');
 import ParserUtils = require('./bungie-api/parser-utils');
+import Errors = require('./errors');
 import Filters = require('./filters');
 
 export class InventoryManager {
@@ -196,7 +197,7 @@ export class InventoryManager {
                 });
             }
 
-            if (this.lastQueueOperationPromise == undefined || this.lastQueueOperationPromise == null)
+            if (_.isUndefined(this.lastQueueOperationPromise) || _.isNull(this.lastQueueOperationPromise))
                 executeAction();
             else
                 this.lastQueueOperationPromise.then(executeAction);
@@ -208,7 +209,7 @@ export class InventoryManager {
     private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
         var promise = new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                reject(new Error('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4)));
+                reject(new Errors.Exception('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4)));
                 return;
             }
 
@@ -231,11 +232,11 @@ export class InventoryManager {
                         });
                     }
                     else
-                        reject(new Error('API call returned status code ' + res.ErrorStatus));
+                        reject(new Errors.Exception('API call returned status code ' + res.ErrorStatus));
                 }
 
             }).catch(err => {
-                reject(new Error('Error thrown while attempting to call API: ' + err));
+                reject(new Errors.Exception('Error thrown while attempting to call API', err));
             })
         });
 
@@ -314,6 +315,9 @@ export class InventoryManager {
     }
 
     public getCurrentQueueTerminationPromise(): Promise<any> {
+        if (_.isNull(this.lastQueueOperationPromise) || _.isUndefined(this.lastQueueOperationPromise))
+            return Promise.resolve();
+
         var promise = new Promise((resolve, reject) => {
             this.lastQueueOperationPromise.then(resolve).catch(reject);
         });

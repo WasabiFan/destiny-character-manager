@@ -1,4 +1,7 @@
 ﻿var sys = require('sys');
+import chalk = require('chalk');
+import Errors = require('./errors');
+import _ = require('underscore');
 
 export class CommandConsole {
     private options: CommandConsoleOptions;
@@ -17,7 +20,6 @@ export class CommandConsole {
     }
 
     public processCommand(commandStr: string) {
-        // TODO: disable text input
         var fullCommand: string = commandStr.replace(/(\r\n|\n|\r)/gm, "");
         var commandParts: string[] = fullCommand.split(' ');
 
@@ -38,9 +40,16 @@ export class CommandConsole {
                 actionResult.then(() => {
                     this.reopenPrompt();
                 }).catch(error => {
-                    if (error instanceof Error)
-                        console.error((<Error>error).message);
-                    else console.error(error);
+                    // TODO: print stack
+                    if (error instanceof Errors.Exception) {
+                        console.error(chalk.bgRed((<Errors.Exception>error).toString()));
+                        console.error('  ' + (<Errors.Exception>error).stack);
+                    }
+                    else if (error instanceof Errors.Error) {
+                        console.error(chalk.bgRed((<Errors.Error>error).message));
+                        console.error('  ' + (<Errors.Error>error).stack);
+                    }
+                    else console.error(chalk.bgRed(error));
 
                     this.reopenPrompt();
                 });
@@ -83,9 +92,9 @@ export class Command {
     constructor(name: string, actionInfo?: ((fullArgs: string, ...args: string[]) => void | Promise<any>) | Command[], commandsArg?: Command[]) {
         this.name = name;
 
-        if (typeof actionInfo === 'function') {
+        if (_.isFunction(actionInfo)) {
             this.action = <(fullArgs: string, ...args: string[]) => void | Promise<any>> actionInfo;
-            if (typeof commandsArg != 'undefined')
+            if (!_.isUndefined(commandsArg))
                 this.subcommands = commandsArg;
         }
         else {

@@ -8,6 +8,7 @@ import Membership = require('./bungie-api/api-objects/membership');
 import ApiCore = require('./bungie-api/api-core');
 import InventoryManager = require('./inventory-manager');
 import ParserUtils = require('./bungie-api/parser-utils');
+import Errors = require('./errors');
 var destiny = require('destiny-client')();
 
 class InventoryItemTransferManager {
@@ -342,7 +343,7 @@ class InventoryItemTransferManager {
     public transferDesignatedItems(target: Character.Character) {
         if (!this.inventoryMan.isLoaded)
             // TODO: Return error instead
-            throw new Error('The inventory must be loaded before transferring items.');
+            throw new Errors.Exception('The inventory must be loaded before transferring items.');
 
         var state = this.inventoryMan.currentState;
         var characters = AppConfiguration.currentConfig.characters;

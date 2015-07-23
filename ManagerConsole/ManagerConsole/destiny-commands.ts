@@ -13,6 +13,7 @@ import Filters = require('./filters');
 import ParserUtils = require('./bungie-api/parser-utils');
 import Table = require('easy-table');
 import Chalk = require('chalk');
+import Errors = require('./errors');
 var package = require('./package.json');
 
 export class DestinyCommandConsole {
@@ -56,7 +57,8 @@ export class DestinyCommandConsole {
             new Console.Command('unmark', this.unmarkAction.bind(this)),
             new Console.Command('move-marks', this.transferAction.bind(this)),
             new Console.Command('reset', this.resetAction.bind(this)),
-            new Console.Command('calc-glimmer', this.calcGlimmerAction.bind(this))
+            new Console.Command('calc-glimmer', this.calcGlimmerAction.bind(this)),
+            new Console.Command('update-state', this.updateStateAction.bind(this)),
 
         ]);
 
@@ -70,17 +72,30 @@ export class DestinyCommandConsole {
     }
 
     public start() {
-        console.log('Loading inventory data... this could take a few seconds');
-        this.inventoryManager.loadState().then(() => {
-            console.log('Inventory data loaded.');
+        this.reloadState().then(() => {
             this.console = new Console.CommandConsole(this.consoleOptions);
             this.console.start();
-        }).catch(error => {
+        }).catch((error: Errors.Exception) => {
             console.log('Error encountered while loading data. Please restart the app and try again.');
 
-            // TODO: Tab in multiple lines (split and join)
-            console.log('    ' + error);
+            // TODO: Figure out what we want to print here
+            console.log('  ' + error.toString());
+            console.log('  ' + error.stack);
         });
+    }
+
+    private reloadState(): Promise<any> {
+        var promise = new Promise((resolve, reject) => {
+            console.log('Loading inventory data... this could take a few seconds');
+            this.inventoryManager.loadState().then(() => {
+                console.log('Inventory data loaded.');
+                resolve();
+            }).catch(error => {
+                reject(error);
+            });
+        });
+
+        return promise;
     }
 
     private setAction(fullArgs: string, propName: string, propValue: string) {
@@ -178,7 +193,7 @@ export class DestinyCommandConsole {
     private initCharacterAction(fullArgs: string): Promise<any> {
         if (Configuration.currentConfig.authMember == undefined) {
             var errorStr = 'You must load basic authentication info before querying for characters.';
-            return Promise.reject(new Error(errorStr));
+            return Promise.reject(new Errors.Exception(errorStr));
         }
 
         return Configuration.currentConfig.loadDefaultCharactersFromApi();
@@ -282,7 +297,7 @@ export class DestinyCommandConsole {
         }
     }
 
-    private calcGlimmerAction(fillArgs: string, characterAlias: string) {
+    private calcGlimmerAction(fullArgs: string, characterAlias: string) {
         var items = this.getItemsFromAlias(characterAlias);
 
         if (items == null) {
@@ -310,5 +325,9 @@ export class DestinyCommandConsole {
 
         table.total('Total', undefined, undefined);
         console.log(table.toString());
+    }
+
+    private updateStateAction(fullAction: string): Promise<any> {
+        return this.reloadState();
     }
 }
