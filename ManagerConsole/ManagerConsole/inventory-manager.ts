@@ -1,6 +1,7 @@
 ﻿import _ = require('underscore');
-
+import stackTrace = require('stack-trace');
 var destiny = require('destiny-client')();
+
 import Bungie = require('./bungie-api/api-core');
 import Inventory = require('./bungie-api/api-objects/inventory');
 import Configuration = require('./config-manager');
@@ -105,8 +106,11 @@ export class InventoryManager {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.MoveItem;
         newOperation.requiresAuth = true;
+
+        // Add special operation context (mostly for debugging)
         newOperation.context = new OperationContext();
         newOperation.context.item = item;
+        newOperation.context.loadTrace(1);
 
         // Get the stack size from the item if it's available
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
@@ -164,8 +168,11 @@ export class InventoryManager {
         var newOperation: QueuedOperation = new QueuedOperation();
         newOperation.type = QueuedOperationType.EquipItem;
         newOperation.requiresAuth = true;
+
+        // Add special operation context (mostly for debugging)
         newOperation.context = new OperationContext();
         newOperation.context.item = item;
+        newOperation.context.loadTrace(1);
 
         // Set the operation-specific params
         newOperation.operationParams = {
@@ -211,7 +218,7 @@ export class InventoryManager {
     private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
         var promise = new Promise((resolve, reject) => {
             if (retryCounter >= 4) {
-                reject(new Errors.Exception('Operation retry count exceeded on ' + QueuedOperationType[operation.type] + ' on item "' + operation.context.item.name + '" with params ' + JSON.stringify(operation.operationParams, null, 4)));
+                reject(new Errors.InventoryQueuedOperationException('Operation retry count exceeded', operation));
                 return;
             }
 
@@ -234,11 +241,11 @@ export class InventoryManager {
                         });
                     }
                     else
-                        reject(new Errors.Exception('API call returned status code ' + res.ErrorStatus));
+                        reject(new Errors.InventoryQueuedOperationException('API call returned status code ' + res.ErrorStatus, operation));
                 }
 
             }).catch(err => {
-                reject(new Errors.Exception('Error thrown while attempting to call API', err));
+                reject(new Errors.InventoryQueuedOperationException('Error thrown while attempting to call API', operation, err));
             })
         });
 
@@ -366,8 +373,19 @@ export class QueuedOperation {
     public requiresAuth: boolean;
     public operationParams: any;
     public context: OperationContext;
+
+    public toString(numIndents?: number): string {
+        var coreStr = QueuedOperationType[this.type] + '[' + this.context.item.name + ']: ';
+        var stackStr = Errors.ErrorUtils.stringifyStack(this.context.itemSourceTrace, 1);
+        return Errors.ErrorUtils.increaseIndentation(coreStr + '\r\n' + stackStr, numIndents);
+    }
 }
 
 export class OperationContext {
     public item: Inventory.InventoryItem;
+    public itemSourceTrace: stackTrace.StackFrame[] = [];
+
+    public loadTrace(skipFrames?: number) {
+        this.itemSourceTrace = stackTrace.get().slice((skipFrames || 0) + 1);
+    }
 }

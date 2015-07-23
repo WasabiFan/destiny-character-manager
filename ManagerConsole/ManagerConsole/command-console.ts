@@ -42,8 +42,7 @@ export class CommandConsole {
                 }).catch(error => {
                     // TODO: print stack
                     if (error instanceof Errors.Exception) {
-                        console.error(chalk.bgRed((<Errors.Exception>error).toString()));
-                        console.error('  ' + (<Errors.Exception>error).stack);
+                        (<Errors.Exception>error).logErrorDetail();
                     }
                     else if (error instanceof Errors.Error) {
                         console.error(chalk.bgRed((<Errors.Error>error).message));
