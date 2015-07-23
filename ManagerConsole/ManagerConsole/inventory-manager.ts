@@ -19,6 +19,9 @@ export class InventoryManager {
     public loadState(): Promise<any> {
         var workingState = this.workingState = new InventoryState();
 
+        if (!Configuration.currentConfig.hasFullAuthInfo)
+            return Promise.reject(new Error('Full configuration info must be saved before '));
+
         var promises: Promise<any>[] = [];
         Configuration.currentConfig.characters.forEach((currentCharacter, characterIndex) => {
             var promise = new Promise((resolve, reject) => {

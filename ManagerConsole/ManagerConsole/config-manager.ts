@@ -1,4 +1,6 @@
-﻿import fs = require('fs');
+﻿import _ = require('underscore');
+
+import fs = require('fs');
 import Membership = require('./bungie-api/api-objects/membership');
 import Character = require('./bungie-api/api-objects/character');
 import Inventory = require('./bungie-api/api-objects/inventory');
@@ -19,6 +21,19 @@ class AppConfiguration {
     public characters: Character.AliasedCharacter[] = [];
     public designatedItems: Inventory.InventoryItem[] = [];
 
+    public get hasMemberInfo() {
+        return !_.isUndefined(this.authMember)
+            && !_.isNull(this.authMember)
+            && this.authMember instanceof Membership.Member;
+    }
+
+    public get hasFullAuthInfo() {
+        return this.hasMemberInfo
+            && !_.isUndefined(this.authCookie)
+            && !_.isUndefined(this.apiKey)
+            && !_.isUndefined(this.csrf);
+    }
+
     public static loadCurrentConfig() {
         try {
             var configStr = fs.readFileSync(this.configFilePath);
@@ -29,6 +44,7 @@ class AppConfiguration {
         }
         catch (e) {
             console.log('Failed to load new configuration: ' + e);
+            AppConfiguration.currentConfig = new AppConfiguration();
         }
     }
 

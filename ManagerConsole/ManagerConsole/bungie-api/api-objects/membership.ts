@@ -10,10 +10,16 @@ export class Member {
     }
 
     public static loadFromPlain(plainObj: any): Member {
+        if (plainObj == undefined)
+            return undefined;
+
         return new Member(plainObj.id, plainObj.type);
     }
 
     public static loadFromApiResponse(apiObj: any): Member {
+        if (apiObj == undefined)
+            return undefined;
+
         return new Member(apiObj.membershipId, apiObj.membershipType);
     }
 }

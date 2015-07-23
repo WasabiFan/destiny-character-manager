@@ -79,7 +79,7 @@ export class DestinyCommandConsole {
             console.log('Error encountered while loading data. Please restart the app and try again.');
 
             // TODO: Tab in multiple lines (split and join)
-            console.log('    ' + error);
+            console.log('  ' + error.stack);
         });
     }
 
