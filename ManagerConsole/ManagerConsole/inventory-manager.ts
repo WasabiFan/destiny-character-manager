@@ -312,6 +312,14 @@ export class InventoryManager {
             }
         }
     }
+
+    public getCurrentQueueTerminationPromise(): Promise<any> {
+        var promise = new Promise((resolve, reject) => {
+            this.lastQueueOperationPromise.then(resolve).catch(reject);
+        });
+
+        return promise;
+    }
 }
 
 export class InventoryState {
