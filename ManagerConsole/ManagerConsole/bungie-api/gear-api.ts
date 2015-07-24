@@ -6,11 +6,11 @@ import Inventory = require('./api-objects/inventory');
 import ParserUtils = require('./parser-utils');
 import GearCollection = require('./api-objects/bucket-gear-collection');
 import Characters = require('./api-objects/character');
-import Configuration = require('../utils/config-manager');
+import DataStores = require('../utils/data-stores');
 
 class GearApi {
     private static getItemsFromSinglePage(targetCharacter: Characters.Character, endpointType: GearEndpointType) {
-        var targetUrl = Bungie.buildEndpointStr(endpointType == GearEndpointType.Gear ? 'Gear' : 'Inventory', Configuration.currentConfig.authMember, targetCharacter);
+        var targetUrl = Bungie.buildEndpointStr(endpointType == GearEndpointType.Gear ? 'Gear' : 'Inventory', DataStores.DataStores.appConfig.currentData.authMember, targetCharacter);
         var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(targetUrl).then(html => {
                 var $ = cheerio.load(html);

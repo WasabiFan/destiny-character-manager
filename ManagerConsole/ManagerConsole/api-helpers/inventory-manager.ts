@@ -12,7 +12,7 @@ import Gear = require('../bungie-api/gear-api');
 import ParserUtils = require('../bungie-api/parser-utils');
 
 // Utils
-import Configuration = require('../utils/config-manager');
+import DataStores = require('../utils/data-stores');
 import Errors = require('../utils/errors');
 
 // App core
@@ -24,10 +24,13 @@ export class InventoryManager {
     private requestCounter: number = 0;
 
     public loadState(): Promise<any> {
+        if (!DataStores.DataStores.appConfig.currentData.hasFullAuthInfo)
+            return Promise.reject(new Errors.Exception('Full authentication info must be available in the application config before loading data.', Errors.ExceptionCode.InsufficientAuthConfig));
+
         var workingState = this.workingState = new InventoryState();
 
         var promises: Promise<any>[] = [];
-        Configuration.currentConfig.characters.forEach((currentCharacter, characterIndex) => {
+        DataStores.DataStores.appConfig.currentData.characters.forEach((currentCharacter, characterIndex) => {
             var promise = new Promise((resolve, reject) => {
                 // TODO: inventory
                 Gear.getItems(currentCharacter).then(buckets => {
@@ -42,7 +45,8 @@ export class InventoryManager {
         });
 
         var vaultPromise = new Promise((resolve, reject) => {
-            Vault.getItems(Configuration.currentConfig.characters[0]).then(items => {
+            // TODO: If there are no characters, this next line will break
+            Vault.getItems(DataStores.DataStores.appConfig.currentData.characters[0]).then(items => {
                 this.workingState.vault = new VaultInventoryState();
                 var buckets = new GearCollection.BucketGearCollection(items);
 
@@ -122,7 +126,7 @@ export class InventoryManager {
 
         // Get all the API params
         newOperation.operationParams = {
-            membershipType: Configuration.currentConfig.authMember.type,
+            membershipType: DataStores.DataStores.appConfig.currentData.authMember.type,
             characterId: character.character.id,
             itemId: item.instanceId,
             itemReferenceHash: item.itemHash,
@@ -181,7 +185,7 @@ export class InventoryManager {
 
         // Set the operation-specific params
         newOperation.operationParams = {
-            membershipType: Configuration.currentConfig.authMember.type,
+            membershipType: DataStores.DataStores.appConfig.currentData.authMember.type,
             characterId: character.character.id,
             itemId: item.instanceId
         };
@@ -230,7 +234,7 @@ export class InventoryManager {
             console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
                 + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
 
-            if (Configuration.currentConfig.debugMode)
+            if (DataStores.DataStores.appConfig.currentData.debugMode)
                 console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
 
             destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
@@ -295,7 +299,7 @@ export class InventoryManager {
     }
 
     public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode) {
-        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
+        var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(characterAlias);
 
         // If they're removing items, they don't need to specify a character
         if (targetCharacter == null && filterMode == Filters.FilterMode.Add) {
@@ -308,22 +312,22 @@ export class InventoryManager {
             collectionToSearch = this.getAllCharacterItems(targetCharacter);
         }
         else if (filterMode == Filters.FilterMode.Remove) {
-            collectionToSearch = Configuration.currentConfig.designatedItems;
+            collectionToSearch = DataStores.DataStores.appConfig.currentData.designatedItems;
         }
 
         var selectedItems = filter.findMatchesInCollection(collectionToSearch);
 
         if (filterMode == Filters.FilterMode.Add) {
-            Configuration.currentConfig.designatedItems = _.union(Configuration.currentConfig.designatedItems, selectedItems);
+            DataStores.DataStores.appConfig.currentData.designatedItems = _.union(DataStores.DataStores.appConfig.currentData.designatedItems, selectedItems);
         }
         else if (filterMode == Filters.FilterMode.Remove) {
             for (var selIndex in selectedItems) {
-                var designatedItemIndex = Filters.FilterUtils.customIndexOf(Configuration.currentConfig.designatedItems,(item) => {
+                var designatedItemIndex = Filters.FilterUtils.customIndexOf(DataStores.DataStores.appConfig.currentData.designatedItems, (item) => {
                     return item.instanceId == selectedItems[selIndex].instanceId
                         && item.itemHash == selectedItems[selIndex].itemHash;
                 });
 
-                Configuration.currentConfig.designatedItems.splice(designatedItemIndex, 1);
+                DataStores.DataStores.appConfig.currentData.designatedItems.splice(designatedItemIndex, 1);
             }
         }
     }

@@ -6,11 +6,11 @@ import Inventory = require('./api-objects/inventory');
 import ParserUtils = require('./parser-utils');
 import BucketGearCollection = require('./api-objects/bucket-gear-collection');
 import Characters = require('./api-objects/character');
-import Configuration = require('../utils/config-manager');
+import DataStores = require('../utils/data-stores');
 
 class VaultApi {
     public static getItems(targetCharacter: Characters.Character): Promise<Inventory.InventoryItem[]> {
-        var vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', Configuration.currentConfig.authMember, targetCharacter);
+        var vaultUrl: string = Bungie.buildEndpointStr('VaultSidebar', DataStores.DataStores.appConfig.currentData.authMember, targetCharacter);
         var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(vaultUrl).then((html) => {
                 var promises: Promise<any>[] = [];

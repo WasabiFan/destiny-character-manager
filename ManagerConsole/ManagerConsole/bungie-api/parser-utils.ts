@@ -281,6 +281,8 @@ class ParserUtils {
             case 'ps':
             case 'playstation':
                 return Membership.MemberNetworkType.PlayStationNetwork;
+            default:
+                return null;
         }
     }
 }

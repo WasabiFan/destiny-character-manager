@@ -1,7 +1,7 @@
 ﻿require('es6-promise').polyfill();
 
-import Configuration = require('./utils/config-manager');
-Configuration.loadCurrentConfig();
+import DataStores = require('./utils/data-stores');
+DataStores.DataStores.load();
 
 import Vault = require('./bungie-api/vault-api');
 import Gear = require('./bungie-api/gear-api');
@@ -12,7 +12,7 @@ import InventoryManager = require('./api-helpers/inventory-manager');
 import InventoryTransferManager = require('./api-helpers/inventory-transfer-manager');
 import Commands = require('./app-core/destiny-commands');
 
-Configuration.currentConfig.save();
+DataStores.DataStores.appConfig.save();
 
 var cmdConsole = new Commands.DestinyCommandConsole();
 cmdConsole.start();

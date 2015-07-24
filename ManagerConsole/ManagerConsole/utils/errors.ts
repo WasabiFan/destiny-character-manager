@@ -2,6 +2,7 @@
 import chalk = require('chalk');
 import stackTrace = require('stack-trace');
 import util = require('util');
+import _ = require('underscore');
 
 export declare class Error {
     public name: string;
@@ -12,14 +13,22 @@ export declare class Error {
 
 export class Exception extends Error {
     public innerErrorData: Exception | Error;
+    public exceptionCode: ExceptionCode;
 
-    constructor(message: string, innerErrorData?: Exception | Error) {
+    constructor(message: string, primaryData?: Exception | Error | ExceptionCode, secondaryData?: Exception | Error) {
         super(message);
         this.name = 'Exception';
         this.message = message;
         this.stack = (<any>new Error()).stack;
 
-        this.innerErrorData = innerErrorData;
+        if (_.isNumber(primaryData)) {
+            this.innerErrorData = secondaryData;
+            this.exceptionCode = <ExceptionCode>primaryData;
+        }
+        else {
+            this.innerErrorData = <Exception | Error>primaryData;
+            this.exceptionCode = ExceptionCode.None;
+        }
     }
 
     public toString() {
@@ -27,8 +36,6 @@ export class Exception extends Error {
     }
 
     public logErrorDetail() {
-        // TODO: Format with proper indentation
-
         console.error(chalk.bgRed(this.toString()));
         console.error(ErrorUtils.stringifyErrorStack(this, 1));
         if (this.innerErrorData) {
@@ -41,6 +48,14 @@ export class Exception extends Error {
                 // This shouldn't happen
                 console.error(this.innerErrorData);
         }
+    }
+
+    public logAsWarning() {
+        console.warn(chalk.bgYellow(this.message));
+    }
+
+    public logErrorMessage() {
+        console.error(chalk.bgRed(this.message));
     }
 }
 
@@ -87,4 +102,10 @@ export class ErrorUtils {
         return str.replace(/^(?=.)/gm, new Array(numIndents + 1).join(this.indent));
     }
 
+}
+
+export enum ExceptionCode {
+    None = 0,
+    InsufficientAuthConfig,
+    InvalidCommandParams
 }

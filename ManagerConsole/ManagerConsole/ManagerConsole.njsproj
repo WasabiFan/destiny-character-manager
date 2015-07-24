@@ -42,7 +42,7 @@
     <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
     <TypeScriptCompile Include="utils\command-console.ts" />
-    <TypeScriptCompile Include="utils\config-manager.ts" />
+    <TypeScriptCompile Include="utils\data-stores.ts" />
     <TypeScriptCompile Include="bungie-api\gear-api.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\inventory.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\membership.ts" />
@@ -60,6 +60,7 @@
     <TypeScriptCompile Include="bungie-api\vault-api.ts" />
     <TypeScriptCompile Include="Scripts\typings\stack-trace\stack-trace.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\underscore\underscore.d.ts" />
+    <TypeScriptCompile Include="utils\local-data-store.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bungie-api\" />
@@ -76,6 +77,9 @@
     <Folder Include="Scripts\typings\node\" />
     <Folder Include="Scripts\typings\stack-trace\" />
     <Folder Include="Scripts\typings\underscore\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Scripts\resurrect.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

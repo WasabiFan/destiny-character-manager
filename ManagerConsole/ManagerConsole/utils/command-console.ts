@@ -32,7 +32,14 @@ export class CommandConsole {
         }
 
         if (currentCommand.action != undefined) {
-            var actionResult: Promise<any> = currentCommand.action.apply(null, [fullCommand.substring(argStartIndex)].concat(commandParts.slice(i)));
+            var actionResult: Promise<any>;
+
+            try {
+                actionResult = currentCommand.action.apply(null, [fullCommand.substring(argStartIndex)].concat(commandParts.slice(i)));
+            }
+            catch (error) {
+                actionResult = Promise.reject(error);
+            }
 
             if (actionResult == undefined)
                 this.reopenPrompt();
@@ -40,11 +47,15 @@ export class CommandConsole {
                 actionResult.then(() => {
                     this.reopenPrompt();
                 }).catch(error => {
-                    // TODO: print stack
                     if (error instanceof Errors.Exception) {
-                        (<Errors.Exception>error).logErrorDetail();
+                        if (this.options.warningExceptionCodes.indexOf((<Errors.Exception>error).exceptionCode) >= 0)
+                            (<Errors.Exception>error).logAsWarning();
+                        else if ((<Errors.Exception>error).exceptionCode === Errors.ExceptionCode.InvalidCommandParams)
+                            (<Errors.Exception>error).logErrorMessage();
+                        else
+                            (<Errors.Exception>error).logErrorDetail();
                     }
-                    else if (error instanceof Errors.Error) {
+                    else if (error instanceof Error) {
                         console.error(chalk.bgRed((<Errors.Error>error).message));
                         console.error('  ' + (<Errors.Error>error).stack);
                     }
@@ -80,6 +91,7 @@ export class CommandConsole {
 export class CommandConsoleOptions {
     public commandRoot: Command;
     public header: string[];
+    public warningExceptionCodes: Errors.ExceptionCode[] = [];
 }
 
 export class Command {

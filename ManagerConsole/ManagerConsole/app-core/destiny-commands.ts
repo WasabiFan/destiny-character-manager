@@ -6,6 +6,7 @@ import Table = require('easy-table');
 // Bungie API
 import Inventory = require('../bungie-api/api-objects/inventory');
 import Character = require('../bungie-api/api-objects/character');
+import Membership = require('../bungie-api/api-objects/membership');
 import GearCollection = require('../bungie-api/api-objects/bucket-gear-collection');
 import Bungie = require('../bungie-api/api-core');
 import Vault = require('../bungie-api/vault-api');
@@ -13,7 +14,7 @@ import Gear = require('../bungie-api/gear-api');
 import ParserUtils = require('../bungie-api/parser-utils');
 
 // Utils
-import Configuration = require('../utils/config-manager');
+import DataStores = require('../utils/data-stores');
 import Console = require('../utils/command-console');
 import Errors = require('../utils/errors');
 
@@ -25,7 +26,7 @@ import InventoryManager = require('../api-helpers/inventory-manager');
 import Filters = require('../app-core/filters');
 
 export class DestinyCommandConsole {
-    private console: Console.CommandConsole;
+    private commandConsole: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
     private inventoryManager: InventoryManager.InventoryManager;
     private transferMan: InventoryTransferManager;
@@ -75,14 +76,17 @@ export class DestinyCommandConsole {
             'Destiny character management console v' + package.version
         ];
 
+        this.consoleOptions.warningExceptionCodes.push(Errors.ExceptionCode.InsufficientAuthConfig);
+
         this.inventoryManager = new InventoryManager.InventoryManager();
         this.transferMan = new InventoryTransferManager(this.inventoryManager);
     }
 
     public start() {
         this.reloadState().then(() => {
-            this.console = new Console.CommandConsole(this.consoleOptions);
-            this.console.start();
+            this.commandConsole = new Console.CommandConsole(this.consoleOptions);
+            this.commandConsole.start();
+
         }).catch((error: Errors.Exception) => {
             console.log('Error encountered while loading data. Please restart the app and try again.');
 
@@ -92,14 +96,27 @@ export class DestinyCommandConsole {
         });
     }
 
+    private assertFullAuth() {
+        if (!DataStores.DataStores.appConfig.currentData.hasFullAuthInfo)
+            throw new Errors.Exception('You cannot perform this action without loaded authentication info.', Errors.ExceptionCode.InsufficientAuthConfig);
+    }
+
     private reloadState(): Promise<any> {
         var promise = new Promise((resolve, reject) => {
             console.log('Loading inventory data... this could take a few seconds');
             this.inventoryManager.loadState().then(() => {
                 console.log('Inventory data loaded.');
                 resolve();
-            }).catch(error => {
-                reject(error);
+            }).catch((error: Errors.Exception) => {
+                if (error.exceptionCode == Errors.ExceptionCode.InsufficientAuthConfig) {
+                    console.warn(chalk.bgYellow(error.message));
+                    console.warn('You may still use the console, but only configuration commands will be available.');
+                    // TODO: add note about reloading state when configured w/ instructions on configuring
+
+                    resolve();
+                }
+                else
+                    reject(error);
             });
         });
 
@@ -112,17 +129,19 @@ export class DestinyCommandConsole {
         
         switch (propName) {
             case 'cookie':
-                Configuration.currentConfig.authCookie = wholeVal;
+                DataStores.DataStores.appConfig.currentData.authCookie = wholeVal;
                 break;
             case 'debug':
-                Configuration.currentConfig.debugMode = propValue == 'true';
+                DataStores.DataStores.appConfig.currentData.debugMode = propValue == 'true';
                 break;
         }
 
-        Configuration.currentConfig.save();
+        DataStores.DataStores.appConfig.save();
     }
 
     private listAction(fullArgs: string, characterAlias: string, filterStr: string) {
+        this.assertFullAuth();
+
         var filter = new Filters.InventoryFilter(filterStr);
         var items = this.getItemsFromAlias(characterAlias);
 
@@ -151,7 +170,9 @@ export class DestinyCommandConsole {
     }
 
     private transferAction(fullArgs: string, characterAlias: string): Promise<any> {
-        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(characterAlias);
+        this.assertFullAuth();
+
+        var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(characterAlias);
         if (targetCharacter == null) {
             console.log('Invalid character alias: ' + characterAlias);
             return;
@@ -161,58 +182,69 @@ export class DestinyCommandConsole {
     }
 
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {
+        this.assertFullAuth();
+
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(characterAlias, filter, Filters.FilterMode.Add);
         this.reportDesignationValidity();
 
-        Configuration.currentConfig.save();
+        DataStores.DataStores.appConfig.save();
     }
 
     private unmarkAction(fullArgs: string, filterStr: string) {
+        this.assertFullAuth();
+
         var filter = new Filters.InventoryFilter(filterStr);
         this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
         this.reportDesignationValidity();
 
-        Configuration.currentConfig.save();
+        DataStores.DataStores.appConfig.save();
     }
 
     private resetAction(fullArgs: string, target: string) {
         switch (target) {
             case 'marks':
-                Configuration.currentConfig.designatedItems.splice(0);
+                DataStores.DataStores.appConfig.currentData.designatedItems.splice(0);
                 break;
             case 'cookie':
-                Configuration.currentConfig.authCookie = undefined;
+                DataStores.DataStores.appConfig.currentData.authCookie = undefined;
                 break;
             default:
                 console.error('Unknown reset target: ' + target);
                 break;
         }
 
-        Configuration.currentConfig.save();
+        DataStores.DataStores.appConfig.save();
     }
 
     private initMemberAction(fullArgs: string, network: string, ...userName: string[]): Promise<any> {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
-        return Configuration.currentConfig.loadMemberInfoFromApi(userName.join(' '), parsedNetwork);
+        if (_.isNull(parsedNetwork))
+            return Promise.reject(new Errors.Exception('You must pass a valid network identidier as the first parameter to this init command. Try "xbl" or "psn".', Errors.ExceptionCode.InvalidCommandParams));
+
+        return DataStores.DataStores.appConfig.currentData
+            .loadMemberInfoFromApi(userName.join(' '), parsedNetwork)
+            .then(() => DataStores.DataStores.appConfig.save());
     }
 
     private initCharacterAction(fullArgs: string): Promise<any> {
-        if (Configuration.currentConfig.authMember == undefined) {
+        if (DataStores.DataStores.appConfig.currentData.authMember == undefined) {
             var errorStr = 'You must load basic authentication info before querying for characters.';
             return Promise.reject(new Errors.Exception(errorStr));
         }
 
-        return Configuration.currentConfig.loadDefaultCharactersFromApi();
+        return DataStores.DataStores.appConfig.currentData
+            .loadDefaultCharactersFromApi()
+            .then(() => DataStores.DataStores.appConfig.save());
     }
 
     private reloadConfigAction(fullArgs: string) {
-        Configuration.loadCurrentConfig();
+        DataStores.DataStores.appConfig.load();
     }
 
     private saveConfigAction(fullArgs: string) {
-        Configuration.currentConfig.save();
+        DataStores.DataStores.appConfig.save();
     }
 
     private printItemTable(items: Inventory.InventoryItem[]) {
@@ -273,10 +305,10 @@ export class DestinyCommandConsole {
             return this.inventoryManager.getAllVaultItems();
         }
         else if (sourceAlias.toLowerCase() === 'marks') {
-            return Configuration.currentConfig.designatedItems;
+            return DataStores.DataStores.appConfig.currentData.designatedItems;
         }
 
-        var targetCharacter = Configuration.currentConfig.getCharacterFromAlias(sourceAlias);
+        var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(sourceAlias);
 
         if (targetCharacter == null)
             return null;
@@ -285,7 +317,7 @@ export class DestinyCommandConsole {
     }
 
     public reportDesignationValidity() {
-        var buckets = new GearCollection.BucketGearCollection(Configuration.currentConfig.designatedItems);
+        var buckets = new GearCollection.BucketGearCollection(DataStores.DataStores.appConfig.currentData.designatedItems);
         var errorMessages = [];
 
         ParserUtils.exoticBucketGroups.forEach((bucketGroup, index) => {
@@ -306,6 +338,8 @@ export class DestinyCommandConsole {
     }
 
     private calcGlimmerAction(fullArgs: string, characterAlias: string) {
+        this.assertFullAuth();
+
         var items = this.getItemsFromAlias(characterAlias);
 
         if (items == null) {
