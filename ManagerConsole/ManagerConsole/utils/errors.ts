@@ -107,5 +107,6 @@ export class ErrorUtils {
 export enum ExceptionCode {
     None = 0,
     InsufficientAuthConfig,
-    InvalidCommandParams
+    InvalidCommandParams,
+    InvalidFilter
 }

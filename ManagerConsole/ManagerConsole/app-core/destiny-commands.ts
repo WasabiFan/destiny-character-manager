@@ -207,6 +207,7 @@ export class DestinyCommandConsole {
         this.assertFullAuth();
 
         var filter = new Filters.InventoryFilter(filterStr);
+
         this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
         this.reportDesignationValidity();
 

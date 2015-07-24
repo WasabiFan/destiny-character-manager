@@ -1,6 +1,7 @@
 ﻿// Bungie API
 import Inventory = require('../bungie-api/api-objects/inventory');
 import ParserUtils = require('../bungie-api/parser-utils');
+import Errors = require('../utils/errors');
 
 export class FilterUtils {
     public static customIndexOf<T>(collection: T[], selector: (item: T) => boolean): number {
@@ -144,7 +145,7 @@ export class InventoryFilter {
 
             switch (filterPart.filterType) {
                 case FilterType.Invalid:
-                    console.error('Invalid filter: ' + filterParts[i]);
+                    throw new Errors.Exception('Invalid filter: ' + filterParts[i], Errors.ExceptionCode.InvalidFilter);
                     break;
                 case FilterType.NameFilter:
                     this.keywords.push(filterPart.baseKeyword.toLowerCase());
