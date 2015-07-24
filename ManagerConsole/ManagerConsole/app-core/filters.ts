@@ -171,9 +171,9 @@ export class InventoryFilter {
 
     public findMatchesInCollection(itemCollection: Inventory.InventoryItem[]): Inventory.InventoryItem[] {
         var result: Inventory.InventoryItem[] = [];
-        for (var i in itemCollection) {
-            if (this.doesMeetCriteria(itemCollection[i]))
-                result.push(itemCollection[i]);
+        for (var i of itemCollection) {
+            if (this.doesMeetCriteria(i))
+                result.push(i);
         }
 
         return result;

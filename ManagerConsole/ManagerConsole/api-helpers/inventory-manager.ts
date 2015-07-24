@@ -303,8 +303,7 @@ export class InventoryManager {
 
         // If they're removing items, they don't need to specify a character
         if (targetCharacter == null && filterMode == Filters.FilterMode.Add) {
-            console.log('Invalid character alias: ' + characterAlias);
-            return;
+            throw new Errors.Exception('Invalid source alias: ' + characterAlias, Errors.ExceptionCode.InvalidCommandParams);
         }
 
         var collectionToSearch: Inventory.InventoryItem[] = [];

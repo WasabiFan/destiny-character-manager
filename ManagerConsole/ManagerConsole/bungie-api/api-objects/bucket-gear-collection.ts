@@ -12,8 +12,8 @@ export class BucketGearCollection {
             parentCharacter = <any>items;
 
         if (_.isArray(items)) {
-            for (var i in items)
-                this.addItem(items[i]);
+            for (var item of items)
+                this.addItem(item);
         }
 
         if (!_.isUndefined(parentCharacter))

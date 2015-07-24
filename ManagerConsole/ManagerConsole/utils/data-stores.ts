@@ -39,9 +39,9 @@ export class AppConfiguration {
         if (alias == null || alias == undefined)
             return null;
 
-        for (var i in this.characters) {
-            if (this.characters[i].alias.toLowerCase() == alias.toLowerCase())
-                return this.characters[i];
+        for (var character of this.characters) {
+            if (character.alias.toLowerCase() == alias.toLowerCase())
+                return character;
         }
 
         return null;
@@ -93,7 +93,7 @@ export class DataStores {
     private static cachePath = './cache.json';
 
     public static load() {
-        this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Character.AliasedCharacter, Membership.Member);
+        this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Character.AliasedCharacter, Membership.Member);
         this.appConfig.load();
     }
 }

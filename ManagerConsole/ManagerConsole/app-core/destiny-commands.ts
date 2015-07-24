@@ -159,8 +159,7 @@ export class DestinyCommandConsole {
         var items = this.getItemsFromAlias(characterAlias);
 
         if (items == null) {
-            console.log('Invalid source alias: ' + characterAlias);
-            return;
+            throw new Errors.Exception('Invalid source alias: ' + characterAlias, Errors.ExceptionCode.InvalidCommandParams);
         }
 
         var filteredItems = filter.findMatchesInCollection(items);

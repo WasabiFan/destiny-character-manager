@@ -1,6 +1,7 @@
 ﻿var sys = require('sys');
 import chalk = require('chalk');
 import Errors = require('./errors');
+import DataStores = require('./data-stores');
 import _ = require('underscore');
 
 export class CommandConsole {
@@ -52,8 +53,10 @@ export class CommandConsole {
                             (<Errors.Exception>error).logAsWarning();
                         else if ((<Errors.Exception>error).exceptionCode === Errors.ExceptionCode.InvalidCommandParams)
                             (<Errors.Exception>error).logErrorMessage();
-                        else
+                        else if (DataStores.DataStores.appConfig.currentData.debugMode)
                             (<Errors.Exception>error).logErrorDetail();
+                        else
+                            (<Errors.Exception>error).logErrorMessage();
                     }
                     else if (error instanceof Error) {
                         console.error(chalk.bgRed((<Errors.Error>error).message));

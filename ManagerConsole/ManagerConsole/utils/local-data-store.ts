@@ -37,6 +37,7 @@ export class LocalDataStore<ConfigType> {
     }
 
     public save() {
-        fs.writeFileSync(this.filePath, this.necromancer.stringify(this.currentData));
+        var jsonObj = JSON.parse(this.necromancer.stringify(this.currentData));
+        fs.writeFileSync(this.filePath, JSON.stringify(jsonObj, null, 4));
     }
 }
