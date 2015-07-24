@@ -60,7 +60,7 @@ export class InventoryManager {
     }
 
     public get currentState(): InventoryState {
-            return this.workingState;
+        return this.workingState;
     }
 
     public get isLoaded(): boolean {
@@ -227,7 +227,7 @@ export class InventoryManager {
                 return;
             }
 
-            console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
+            console.log('[Request ' + (++this.requestCounter) + (retryCounter > 1 ? ('; retry ' + (retryCounter - 1)) : '') + '] '
                 + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
 
             if (Configuration.currentConfig.debugMode)
@@ -318,7 +318,7 @@ export class InventoryManager {
         }
         else if (filterMode == Filters.FilterMode.Remove) {
             for (var selIndex in selectedItems) {
-                var designatedItemIndex = Filters.FilterUtils.customIndexOf(Configuration.currentConfig.designatedItems,(item) => {
+                var designatedItemIndex = Filters.FilterUtils.customIndexOf(Configuration.currentConfig.designatedItems, (item) => {
                     return item.instanceId == selectedItems[selIndex].instanceId
                         && item.itemHash == selectedItems[selIndex].itemHash;
                 });
