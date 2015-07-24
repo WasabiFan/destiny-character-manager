@@ -20,8 +20,11 @@ import Filters = require('../app-core/filters');
 
 export class InventoryManager {
     private workingState: InventoryState;
-    private lastQueueOperationPromise: Promise<any>;
+    private lastRegisteredQueueOperation: QueuedOperation;
+    private lastExecutedQueueOperation: QueuedOperation;
     private requestCounter: number = 0;
+
+    private timeoutBetweenRequests = 1000 * 1.1;
 
     public loadState(): Promise<any> {
         if (!DataStores.DataStores.appConfig.currentData.hasFullAuthInfo)
@@ -64,7 +67,7 @@ export class InventoryManager {
     }
 
     public get currentState(): InventoryState {
-            return this.workingState;
+        return this.workingState;
     }
 
     public get isLoaded(): boolean {
@@ -117,9 +120,7 @@ export class InventoryManager {
         newOperation.requiresAuth = true;
 
         // Add special operation context (mostly for debugging)
-        newOperation.context = new OperationContext();
-        newOperation.context.item = item;
-        newOperation.context.loadTrace(1);
+        newOperation.context = new OperationContext(item);
 
         // Get the stack size from the item if it's available
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
@@ -179,9 +180,7 @@ export class InventoryManager {
         newOperation.requiresAuth = true;
 
         // Add special operation context (mostly for debugging)
-        newOperation.context = new OperationContext();
-        newOperation.context.item = item;
-        newOperation.context.loadTrace(1);
+        newOperation.context = new OperationContext(item);
 
         // Set the operation-specific params
         newOperation.operationParams = {
@@ -206,56 +205,65 @@ export class InventoryManager {
         var newPromise = new Promise((resolve, reject) => {
             var executeAction = () => {
                 this.executeQueuedOperation(newOperation).then(() => {
-                    setTimeout(() => {
-                        this.lastQueueOperationPromise = null;
-                        resolve();
-                    }, 600);
+                    resolve();
                 }).catch((err) => {
                     reject(err);
                 });
             }
 
-            if (_.isUndefined(this.lastQueueOperationPromise) || _.isNull(this.lastQueueOperationPromise))
+            if (_.isUndefined(this.lastRegisteredQueueOperation) || _.isNull(this.lastRegisteredQueueOperation))
                 executeAction();
             else
-                this.lastQueueOperationPromise.then(executeAction).catch(reject);
+                this.lastRegisteredQueueOperation.context.executionPromise.then(executeAction).catch(reject);
         });
 
-        this.lastQueueOperationPromise = newPromise;
+        newOperation.context.executionPromise = newPromise;
+        this.lastRegisteredQueueOperation = newOperation;
     }
 
-    private getDestinyApiPromise(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
+    private runDestinyApiRequest(destinyApiFunction, operation: QueuedOperation, retryCounter: number): Promise<any> {
         var promise = new Promise((resolve, reject) => {
-            if (retryCounter >= 4) {
-                reject(new Errors.InventoryQueuedOperationException('Operation retry count exceeded', operation));
-                return;
-            }
 
-            console.log('[Request ' + (++this.requestCounter) + (retryCounter > 1 ? ('; retry ' + (retryCounter - 1)) : '') + '] '
-                + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
+            var timeUntilNextIncrement = 0;
+            if (!_.isUndefined(this.lastExecutedQueueOperation) && !_.isNull(this.lastExecutedQueueOperation) && !_.isUndefined(this.lastExecutedQueueOperation.context.startTime) && !_.isNull(this.lastExecutedQueueOperation.context.startTime))
+                timeUntilNextIncrement = Math.max(0, this.timeoutBetweenRequests - (Date.now() - this.lastExecutedQueueOperation.context.startTime.getTime()));
 
-            if (DataStores.DataStores.appConfig.currentData.debugMode)
-                console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
+            setTimeout(() => {
 
-            destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
-                if (res.ErrorStatus == "Success")
-                    resolve();
-                else {
-                    if (res.ErrorStatus === 'ThrottleLimitExceededMomentarily') {
-                        console.log('Throttle limit exceeded; retrying ' + retryCounter);
-                        this.getDestinyApiPromise(destinyApiFunction, operation, retryCounter + 1).then(() => {
-                            resolve();
-                        }).catch(error => {
-                            reject(error);
-                        });
+                console.log('[Request ' + (++this.requestCounter) + (retryCounter > 1 ? ('; retry ' + (retryCounter - 1)) : '') + '] '
+                    + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
+
+                if (DataStores.DataStores.appConfig.currentData.debugMode)
+                    console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
+
+                operation.context.startTime = new Date();
+                this.lastExecutedQueueOperation = operation;
+                destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
+                    if (res.ErrorStatus == "Success") {
+                        resolve();
                     }
-                    else
-                        reject(new Errors.InventoryQueuedOperationException('API call returned status code ' + res.ErrorStatus, operation));
-                }
+                    else {
+                        if (res.ErrorStatus === 'ThrottleLimitExceededMomentarily') {
+                            if (retryCounter >= 4) {
+                                reject(new Errors.InventoryQueuedOperationException('Operation retry count exceeded', operation));
+                                return;
+                            }
 
-            }).catch(err => {
-                reject(new Errors.InventoryQueuedOperationException('Error thrown while attempting to call API', operation, err));
-            })
+                            console.log('Throttle limit exceeded; retrying ' + retryCounter);
+                            this.runDestinyApiRequest(destinyApiFunction, operation, retryCounter + 1).then(() => {
+                                resolve();
+                            }).catch(error => {
+                                reject(error);
+                            });
+                        }
+                        else
+                            reject(new Errors.InventoryQueuedOperationException('API call returned status code ' + res.ErrorStatus, operation));
+                    }
+
+                }).catch(err => {
+                    reject(new Errors.InventoryQueuedOperationException('Error thrown while attempting to call API', operation, err));
+                })
+            }, timeUntilNextIncrement);
         });
 
         return promise;
@@ -273,7 +281,7 @@ export class InventoryManager {
                 break;
         }
 
-        return this.getDestinyApiPromise(destinyApiFunction, operation, 1);
+        return this.runDestinyApiRequest(destinyApiFunction, operation, 1);
     }
 
     public getAllCharacterItems(targetCharacter: Character.Character): Inventory.InventoryItem[] {
@@ -332,11 +340,11 @@ export class InventoryManager {
     }
 
     public getCurrentQueueTerminationPromise(): Promise<any> {
-        if (_.isNull(this.lastQueueOperationPromise) || _.isUndefined(this.lastQueueOperationPromise))
+        if (_.isNull(this.lastRegisteredQueueOperation) || _.isUndefined(this.lastRegisteredQueueOperation))
             return Promise.resolve();
 
         var promise = new Promise((resolve, reject) => {
-            this.lastQueueOperationPromise.then(resolve).catch(reject);
+            this.lastRegisteredQueueOperation.context.executionPromise.then(resolve).catch(reject);
         });
 
         return promise;
@@ -392,6 +400,14 @@ export class QueuedOperation {
 export class OperationContext {
     public item: Inventory.InventoryItem;
     public itemSourceTrace: stackTrace.StackFrame[] = [];
+    public startTime: Date;
+    public executionPromise: Promise<any>;
+
+    constructor(item: Inventory.InventoryItem) {
+        this.item = item;
+
+        this.loadTrace(2);
+    }
 
     public loadTrace(skipFrames?: number) {
         this.itemSourceTrace = stackTrace.get().slice((skipFrames || 0) + 1);
