@@ -124,12 +124,20 @@ export class DestinyCommandConsole {
     }
 
     private setAction(fullArgs: string, propName: string, propValue: string) {
+        // TODO: Use separate commands for each target instead
         propName = propName.toLowerCase();
         var wholeVal = fullArgs.substring(fullArgs.indexOf(' ') + 1);
         
         switch (propName) {
             case 'cookie':
                 DataStores.DataStores.appConfig.currentData.authCookie = wholeVal;
+                break;
+            case 'apikey':
+            case 'key':
+                DataStores.DataStores.appConfig.currentData.apiKey = wholeVal;
+                break;
+            case 'csrf':
+                DataStores.DataStores.appConfig.currentData.csrf = wholeVal;
                 break;
             case 'debug':
                 DataStores.DataStores.appConfig.currentData.debugMode = propValue == 'true';
