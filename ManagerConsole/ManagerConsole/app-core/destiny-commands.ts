@@ -55,7 +55,12 @@ export class DestinyCommandConsole {
                     new Console.Command('member', this.initMemberAction.bind(this)),
                     new Console.Command('characters', this.initCharacterAction.bind(this)),
                 ]),
-                new Console.Command('set', this.setAction.bind(this)),
+                new Console.Command('set', [
+                    new Console.Command('cookie', this.setCookieAction.bind(this)),
+                    new Console.Command('apikey', this.setApiKeyAction.bind(this)),
+                    new Console.Command('csrf', this.setCsrfAction.bind(this)),
+                    new Console.Command('debug', this.setDebugAction.bind(this))
+                    ]),
                 new Console.Command('reload', this.reloadConfigAction.bind(this)),
                 new Console.Command('save', this.saveConfigAction.bind(this))
             ]),
@@ -123,26 +128,26 @@ export class DestinyCommandConsole {
         return promise;
     }
 
-    private setAction(fullArgs: string, propName: string, propValue: string) {
-        // TODO: Use separate commands for each target instead
-        propName = propName.toLowerCase();
-        var wholeVal = fullArgs.substring(fullArgs.indexOf(' ') + 1);
-        
-        switch (propName) {
-            case 'cookie':
-                DataStores.DataStores.appConfig.currentData.authCookie = wholeVal;
-                break;
-            case 'apikey':
-            case 'key':
-                DataStores.DataStores.appConfig.currentData.apiKey = wholeVal;
-                break;
-            case 'csrf':
-                DataStores.DataStores.appConfig.currentData.csrf = wholeVal;
-                break;
-            case 'debug':
-                DataStores.DataStores.appConfig.currentData.debugMode = propValue == 'true';
-                break;
-        }
+    private setCookieAction(fullArgs: string, propValue: string) {
+        DataStores.DataStores.appConfig.currentData.authCookie = fullArgs;
+
+        DataStores.DataStores.appConfig.save();
+    }
+
+    private setApiKeyAction(fullArgs: string, propValue: string) {
+        DataStores.DataStores.appConfig.currentData.apiKey = propValue;
+
+        DataStores.DataStores.appConfig.save();
+    }
+
+    private setCsrfAction(fullArgs: string, propValue: string) {
+        DataStores.DataStores.appConfig.currentData.csrf = propValue;
+
+        DataStores.DataStores.appConfig.save();
+    }
+    
+    private setDebugAction(fullArgs: string, propValue: string) {
+        DataStores.DataStores.appConfig.currentData.debugMode = propValue == 'true';
 
         DataStores.DataStores.appConfig.save();
     }
