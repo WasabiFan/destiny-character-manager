@@ -4,6 +4,7 @@ import fs = require('fs');
 import Membership = require('../bungie-api/api-objects/membership');
 import Character = require('../bungie-api/api-objects/character');
 import Inventory = require('../bungie-api/api-objects/inventory');
+import Vault = require('../bungie-api/vault-api');
 import LocalDataStore = require('./local-data-store');
 import Errors = require('./errors');
 var destiny = require('destiny-client')();
@@ -85,9 +86,26 @@ export class AppConfiguration {
     }
 }
 
+export class ArmoryCache {
+    public itemTiers: { [itemHash: string]: Inventory.InventoryItemTier } = {};
+
+    public getOrLoadItemTierForHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
+        if (!_.isUndefined(this.itemTiers[itemHash]))
+            return Promise.resolve(this.itemTiers[itemHash]);
+
+        var tierPromise = Vault.loadTierForItemHash(itemHash);
+        tierPromise.then((tier) => {
+            this.itemTiers[itemHash] = tier;
+            DataStores.armoryCache.save();
+        });
+
+        return tierPromise;
+    }
+}
+
 export class DataStores {
     public static appConfig: LocalDataStore.LocalDataStore<AppConfiguration>;
-    // TODO: Add armory cache here
+    public static armoryCache: LocalDataStore.LocalDataStore<ArmoryCache>;
 
     private static configPath = './conf.json';
     private static cachePath = './cache.json';
@@ -95,5 +113,8 @@ export class DataStores {
     public static load() {
         this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Character.AliasedCharacter, Membership.Member);
         this.appConfig.load();
+
+        this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem);
+        this.armoryCache.load();
     }
 }

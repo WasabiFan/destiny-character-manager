@@ -22,7 +22,7 @@ class VaultApi {
                     var cheerioItem = $(element);
                     var itemInfo = me.loadVaultItemFromCheerio(cheerioItem);
 
-                    var itemPromise = me.loadTierForItemHash(itemInfo.itemHash).then((tier) => {
+                    var itemPromise = DataStores.DataStores.armoryCache.currentData.getOrLoadItemTierForHash(itemInfo.itemHash).then((tier) => {
                         itemInfo.tier = tier;
                         items.push(itemInfo);
                     });
@@ -72,7 +72,7 @@ class VaultApi {
         return newItem;
     }
 
-    private static loadTierForItemHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
+    public static loadTierForItemHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
         var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml('https://www.bungie.net/en/Armory/Detail', {
                 item: itemHash
