@@ -1,5 +1,6 @@
 ﻿// Bungie API
 import Inventory = require('../bungie-api/api-objects/inventory');
+import ParserUtils = require('../bungie-api/parser-utils');
 
 export class FilterUtils {
     public static customIndexOf<T>(collection: T[], selector: (item: T) => boolean): number {
@@ -160,8 +161,11 @@ export class InventoryFilter {
     }
 
     public doesMeetCriteria(item: Inventory.InventoryItem): boolean {
+        // TODO: add a filter property to enable or disable this normalization
+        var itemBucketInGear = ParserUtils.getGearBucketForVaultItem(item);
+
         return (this.tiers.length <= 0 || this.tiers.indexOf(item.tier) >= 0)
-            && (this.buckets.length <= 0 || this.buckets.indexOf(item.bucket) >= 0)
+            && (this.buckets.length <= 0 || this.buckets.indexOf(itemBucketInGear) >= 0)
             && (this.keywords.length <= 0 || FilterUtils.customIndexOf(item.name.toLowerCase().split(/[\s-]+/g), item => this.keywords.indexOf(item) >= 0) >= 0);
     }
 
