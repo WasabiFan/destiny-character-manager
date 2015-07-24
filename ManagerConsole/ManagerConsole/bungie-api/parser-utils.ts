@@ -133,6 +133,12 @@ class ParserUtils {
             || bucket == Inventory.InventoryBucket.VaultWeapon;
     }
 
+    public static isInventory(bucket: Inventory.InventoryBucket): boolean {
+        return bucket == Inventory.InventoryBucket.Consumables
+            || bucket == Inventory.InventoryBucket.Materials;
+
+    }
+
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
         switch (type) {
             case Inventory.InventoryItemType.TitanMark:

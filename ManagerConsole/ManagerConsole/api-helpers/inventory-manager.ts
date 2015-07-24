@@ -231,7 +231,7 @@ export class InventoryManager {
                 return;
             }
 
-            console.log('[Request ' + (++this.requestCounter) + '; retry ' + retryCounter + '] '
+            console.log('[Request ' + (++this.requestCounter) + (retryCounter > 1 ? ('; retry ' + (retryCounter - 1)) : '') + '] '
                 + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
 
             if (DataStores.DataStores.appConfig.currentData.debugMode)

@@ -210,7 +210,7 @@ class InventoryTransferManager {
         var intersection: Inventory.InventoryItem[] = this.intersectArraysOfObjects('instanceId', targetBucket.contents, DataStores.DataStores.appConfig.currentData.designatedItems);
         var exoticEquipped;
         if (intersection.length > 0)
-            exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter);
+            exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter).exoticEquipped;
         for (var i = 0; i < intersection.length; i++) {
             if (intersection[i].getIsEquipped() == true)
                 break;
@@ -336,6 +336,11 @@ class InventoryTransferManager {
                 var vaultTemp;
                 if (vaultTemps.length > 0) {
                     for (var j = 0; j < vaultTemps.length; j++) {
+                        if (ParserUtils.getGearBucketForVaultItem(vaultTemps[j]) != currentBucket) {
+                            vaultTemps.splice(j, 1);
+                            //j = Math.max(0, j);
+                            continue;
+                        }
                         if (vaultTemps[j].tier != Inventory.InventoryItemTier.Exotic) {
                             vaultTemp = vaultTemps[j];
                             break;
@@ -394,6 +399,13 @@ class InventoryTransferManager {
         }
     }
 
+    private checkTransferNeeded(state: InventoryManager.InventoryState, target: Character.Character, bucketIndex: Inventory.InventoryBucket, bucketDesignatedItems: Inventory.InventoryItem[]) {
+        var intersection = this.intersectArraysOfObjects('instanceId', state.characters[target.id].buckets[bucketIndex].contents, bucketDesignatedItems);
+        if (intersection.length == bucketDesignatedItems.length)
+            return false;
+        return true;
+    }
+
     public transferDesignatedItems(target: Character.Character) {
         return new Promise((resolve, reject) => {
             this.promiseParams = { 'resolve': resolve, 'reject': reject };
@@ -428,6 +440,9 @@ class InventoryTransferManager {
             if (currentBucket == Inventory.InventoryBucket.GhostShell || currentBucket == Inventory.InventoryBucket.Subclass)
                 continue;
                 var bucketDesignatedItems: Inventory.InventoryItem[] = designatedBucketItems[currentBucket];
+                var transferNeeded = this.checkTransferNeeded(state, target, currentBucket, bucketDesignatedItems);
+                if (transferNeeded == false)
+                    continue;
 
             var currentVaultBucket = ParserUtils.getVaultBucketFromGearBucket(currentBucket);
                 this.prepForTransfer(currentBucket, currentVaultBucket, target, bucketDesignatedItems, reject);

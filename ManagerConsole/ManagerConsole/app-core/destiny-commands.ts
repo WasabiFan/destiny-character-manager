@@ -251,7 +251,7 @@ export class DestinyCommandConsole {
         var resultTable = new Table();
 
         for (var i in items) {
-            var chalkChain = [];
+            var chalkifyBucket = chalk.gray, chalkifyTier = chalk.white;
 
             var itemBucket = items[i].bucket;
             if (ParserUtils.isVault(itemBucket))
@@ -259,37 +259,50 @@ export class DestinyCommandConsole {
 
             switch (itemBucket) {
                 case Inventory.InventoryBucket.PrimaryWeapon:
-                    chalkChain.push('white');
+                    chalkifyBucket = chalk.white;
                     break;
                 case Inventory.InventoryBucket.SpecialWeapon:
-                    chalkChain.push('green');
+                    chalkifyBucket = chalk.green;
                     break;
                 case Inventory.InventoryBucket.HeavyWeapon:
-                    chalkChain.push('magenta');
+                    chalkifyBucket = chalk.magenta;
                     break;
                 case Inventory.InventoryBucket.Helmet:
-                    chalkChain.push('cyan');
+                    chalkifyBucket = chalk.cyan;
                     break;
                 case Inventory.InventoryBucket.Gauntlets:
-                    chalkChain.push('blue');
+                    chalkifyBucket = chalk.blue;
                     break;
                 case Inventory.InventoryBucket.ChestArmor:
-                    chalkChain.push('yellow');
+                    chalkifyBucket = chalk.yellow;
                     break;
                 case Inventory.InventoryBucket.LegArmor:
-                    chalkChain.push('red');
+                    chalkifyBucket = chalk.red;
                     break;
             }
 
-            var chalkify: any = chalk.gray;
-            for (var chalkIndex in chalkChain) {
-                chalkify = chalkify[chalkChain[chalkIndex]];
+            switch (items[i].tier) {
+                case Inventory.InventoryItemTier.Uncommon:
+                    chalkifyTier = chalk.green;
+                    break;
+                case Inventory.InventoryItemTier.Rare:
+                    chalkifyTier = chalk.blue;
+                    break;
+                case Inventory.InventoryItemTier.Legendary:
+                    chalkifyTier = chalk.magenta;
+                    break;
+                case Inventory.InventoryItemTier.Exotic:
+                    chalkifyTier = chalk.yellow;
+                    break;
             }
 
-            resultTable.cell('', chalkify('█') + (items[i].getIsEquipped() == true ? '>' : ''));
+            var stackSize = items[i].getStackSize();
+
+            resultTable.cell('', chalkifyBucket('█') + (items[i].getIsEquipped() == true ? '>' : ''));
             resultTable.cell('Name', items[i].name);
-            resultTable.cell('Tier', Inventory.InventoryItemTier[items[i].tier]);
+            resultTable.cell('Tier', chalkifyTier(Inventory.InventoryItemTier[items[i].tier]));
             resultTable.cell('Type', Inventory.InventoryItemType[items[i].type]);
+            resultTable.cell('Stack size', stackSize == 1 ? '' : stackSize);
             // TODO: designated
             resultTable.newRow();
         }
