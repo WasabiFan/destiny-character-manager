@@ -108,5 +108,6 @@ export enum ExceptionCode {
     None = 0,
     InsufficientAuthConfig,
     InvalidCommandParams,
-    InvalidFilter
+    InvalidFilter,
+    InvalidInventoryOperation
 }

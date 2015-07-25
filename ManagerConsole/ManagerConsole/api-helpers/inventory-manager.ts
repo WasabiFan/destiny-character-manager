@@ -83,7 +83,7 @@ export class InventoryManager {
     }
 
 
-    public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem): boolean {
+    public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
 
         // Get the two involved buckets by item's bucket type
         var characterBucket = this.workingState.characters[character.character.id].buckets[ParserUtils.getGearBucketForVaultItem(item)];
@@ -95,16 +95,16 @@ export class InventoryManager {
 
         // Bail if making the move would overflow capacity
         if (toBucket.contents.length + 1 > toBucket.capacity)
-            return false;
+            throw new Errors.Exception('The requested move operation would overflow the target\'s capacity.', Errors.ExceptionCode.InvalidInventoryOperation);
 
         // The API will refuse to move an equipped item
         if (item.getIsEquipped() == true)
-            return false;
+            throw new Errors.Exception('The requested item is currently equipped and cannot be moved.', Errors.ExceptionCode.InvalidInventoryOperation);
 
         // Find the index of the target item in the source bucket
         var sourceIndex = null;
         for (var i = 0; i < fromBucket.contents.length; i++) {
-            if (fromBucket.contents[i].instanceId == item.instanceId) {
+            if (fromBucket.contents[i].instanceId == item.instanceId && fromBucket.contents[i].itemHash == item.itemHash) {
                 sourceIndex = i;
                 break;
             }
@@ -112,7 +112,7 @@ export class InventoryManager {
 
         // Bail if we couldn't find the source item
         if (sourceIndex == null)
-            return false;
+            throw new Errors.Exception('The requested item could not be found in the source bucket.', Errors.ExceptionCode.InvalidInventoryOperation);
 
         // Create the new operation and assign some basic info
         var newOperation: QueuedOperation = new QueuedOperation();
@@ -124,7 +124,7 @@ export class InventoryManager {
 
         // Get the stack size from the item if it's available
         var stackSize = (<Inventory.StackableItem>item).stackSize || 1;
-
+        
         // Get all the API params
         newOperation.operationParams = {
             membershipType: DataStores.DataStores.appConfig.currentData.authMember.type,
@@ -145,15 +145,12 @@ export class InventoryManager {
         else
             itemFromSource.bucket = ParserUtils.getGearBucketForVaultItem(itemFromSource);
         toBucket.contents.push(itemFromSource);
-
-        // We have queued the request, return a success
-        return true;
     }
 
-    public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem): boolean {
+    public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem) {
         // If it's in the vault, we can't equip it
         if (ParserUtils.isVault(item.bucket))
-            return false;
+            throw new Errors.Exception('The requested item is currently in the vault and cannot be equipped.', Errors.ExceptionCode.InvalidInventoryOperation);
 
         // Get the bucket that we're swapping
         var characterBucket = this.workingState.characters[character.character.id].buckets[item.bucket];
@@ -164,15 +161,15 @@ export class InventoryManager {
             if (characterBucket.contents[i].getIsEquipped() == true)
                 currentlyEquipped = characterBucket.contents[i];
 
+        // If we couldn't find an equipped item, something went horribly wrong
+        if (currentlyEquipped == null)
+            throw new Errors.Exception('We were unable to find the item that must be unequipped for this operation to continue.', Errors.ExceptionCode.InvalidInventoryOperation);
+
         // Find the target item
         var targetItem: Inventory.InventoryItem = null;
         for (var i in characterBucket.contents)
-            if (characterBucket.contents[i].instanceId == item.instanceId)
+            if (characterBucket.contents[i].instanceId == item.instanceId && characterBucket.contents[i].itemHash == item.itemHash)
                 targetItem = characterBucket.contents[i];
-
-        // If we couldn't find an equipped item, something went horribly wrong
-        if (currentlyEquipped == null)
-            return false;
 
         // Create the new operation and set basic config
         var newOperation: QueuedOperation = new QueuedOperation();
@@ -195,9 +192,6 @@ export class InventoryManager {
         // Swap the equipped weapon in the working state
         (<Inventory.GearItem>currentlyEquipped).isEquipped = false;
         (<Inventory.GearItem>targetItem).isEquipped = true;
-
-        // We got to the end -- return success
-        return true;
     }
 
     private processQueueAddition(newOperation: QueuedOperation) {
