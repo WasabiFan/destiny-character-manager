@@ -178,12 +178,12 @@ class InventoryTransferManager {
             for (var j = 0; j < characters.length; j++) {
                 if (characters[j].id == targetCharacter.id)
                     continue;
-                if (state.characters[characters[j].id].bucketCollection.getItems(gearBucket).length < ParserUtils.findCapacityForBucket(gearBucket) && excludeStrings.indexOf(intersection[i].instanceId + ',' + intersection[i].itemHash) == -1) {
+                if (state.characters[characters[j].id].bucketCollection.getItems(gearBucket).length < ParserUtils.findCapacityForBucket(gearBucket) && excludeStrings.indexOf(diff[i].instanceId + ',' + diff[i].itemHash) == -1) {
                     this.inventoryMan.enqueueMoveOperation(state.characters[characters[j].id], false, diff[i]);
                     return;
                 }
             }
-            if (gearBucket != currentBucket && ParserUtils.findCapacityForBucket(gearBucket) > state.characters[targetCharacter.id].bucketCollection.getItems(gearBucket).length && excludeStrings.indexOf(intersection[i].instanceId + ',' + intersection[i].itemHash) == -1) {
+            if (gearBucket != currentBucket && ParserUtils.findCapacityForBucket(gearBucket) > state.characters[targetCharacter.id].bucketCollection.getItems(gearBucket).length && excludeStrings.indexOf(diff[i].instanceId + ',' + diff[i].itemHash) == -1) {
                 this.inventoryMan.enqueueMoveOperation(state.characters[targetCharacter.id], false, diff[i]);
                 return;
             }
@@ -201,7 +201,7 @@ class InventoryTransferManager {
         }
         for (var i = 0; i < diff.length; i++) {
             var gearBucket = ParserUtils.getGearBucketForVaultItem(diff[i]);
-            if (state.characters[targetCharacter.id].bucketCollection.getItems(gearBucket).length < ParserUtils.findCapacityForBucket(gearBucket) && excludeStrings.indexOf(intersection[i].instanceId + ',' + intersection[i].itemHash) == -1) {
+            if (state.characters[targetCharacter.id].bucketCollection.getItems(gearBucket).length < ParserUtils.findCapacityForBucket(gearBucket) && excludeStrings.indexOf(diff[i].instanceId + ',' + diff[i].itemHash) == -1) {
                 this.inventoryMan.enqueueMoveOperation(state.characters[targetCharacter.id], false, diff[i]);
                 return;
             }
