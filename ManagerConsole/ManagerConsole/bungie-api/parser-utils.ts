@@ -4,14 +4,17 @@ import Membership = require('./api-objects/membership');
 
 class ParserUtils {
     public static exoticBucketGroups: Inventory.InventoryBucket[][] = [
-        [Inventory.InventoryBucket.PrimaryWeapon,
+        [
+            Inventory.InventoryBucket.PrimaryWeapon,
             Inventory.InventoryBucket.SpecialWeapon,
-            Inventory.InventoryBucket.HeavyWeapon],
-        [Inventory.InventoryBucket.Helmet,
+            Inventory.InventoryBucket.HeavyWeapon
+        ], [
+            Inventory.InventoryBucket.Helmet,
             Inventory.InventoryBucket.Gauntlets,
             Inventory.InventoryBucket.ChestArmor,
             Inventory.InventoryBucket.LegArmor,
-            Inventory.InventoryBucket.ClassItem]
+            Inventory.InventoryBucket.ClassItem
+        ]
     ];
 
     private static itemTierLookupTable: { [name: string]: Inventory.InventoryItemTier } = {
