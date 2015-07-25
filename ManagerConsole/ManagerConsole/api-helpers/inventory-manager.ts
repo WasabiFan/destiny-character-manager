@@ -84,6 +84,8 @@ export class InventoryManager {
 
 
     public enqueueMoveOperation(character: CharacterInventoryState, toVault: boolean, item: Inventory.InventoryItem) {
+        this.workingState.characters[character.character.id].bucketCollection.createBucket(ParserUtils.getGearBucketForVaultItem(item));
+        character = this.workingState.characters[character.character.id];
 
         // Get the two involved buckets by item's bucket type
         var characterBucket = this.workingState.characters[character.character.id].buckets[ParserUtils.getGearBucketForVaultItem(item)];

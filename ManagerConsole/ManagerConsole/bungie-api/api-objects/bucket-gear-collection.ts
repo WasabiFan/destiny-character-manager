@@ -55,7 +55,7 @@ export class BucketGearCollection {
         return result;
     }
 
-    private createBucket(bucket: Inventory.InventoryBucket) {
+    public createBucket(bucket: Inventory.InventoryBucket) {
         if (_.isUndefined(this.bucketMap[bucket]))
             this.bucketMap[bucket] = new InventoryBucketState(bucket);
     }
