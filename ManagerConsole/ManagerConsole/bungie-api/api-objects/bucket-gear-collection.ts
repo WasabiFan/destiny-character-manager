@@ -20,6 +20,10 @@ export class BucketGearCollection {
             this.parentCharacter = parentCharacter;
     }
 
+    public hasBucket(bucket: Inventory.InventoryBucket): boolean {
+        return !_.isUndefined(this.bucketMap[bucket]);
+    }
+
     public addItem(item: Inventory.InventoryItem) {
         this.createBucket(item.bucket);
         this.bucketMap[item.bucket].contents.push(item);
