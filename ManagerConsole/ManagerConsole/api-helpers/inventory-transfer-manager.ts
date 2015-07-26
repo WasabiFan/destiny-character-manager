@@ -22,63 +22,76 @@ class InventoryTransferManager {
     }
 
     private intersectArraysOfObjects(uniqueIdentifierAttributeNames: string[], ...arrays: any[][]) {
-        var arr, i, id, j, len, len1, name, obj, objectsById, ref;
-        objectsById = {};
-        for (i = 0, len = arrays.length; i < len; i++) {
-            arr = arrays[i];
-            for (j = 0, len1 = arr.length; j < len1; j++) {
-                obj = arr[j];
+        var ref;
+        // Object to sort objects into (by the uniqueIdentifierAttributeNames)
+        var objectsById = {};
+        // Loop through each source array
+        for (var arr of arrays) {
+            // Loop through each object in the array
+            for (var obj of arr) {
+                // Construct a unique identifier string for obj by concatanating obj[<each identifier>]
                 var str = '';
                 for (var nameIndex = 0; nameIndex < uniqueIdentifierAttributeNames.length; nameIndex++)
                     str += obj[uniqueIdentifierAttributeNames[nameIndex]] + ',';
+                // Remove the trailing ','
                 if (str.length > 1)
                     str = str.substring(0, str.length - 2);
+                // Sort the object into objectsById using str as the id
                 (objectsById[str] || (objectsById[str] = [])).push(obj);
             }
         }
+
+        // Return objects from objectsById that have one object for each input array
         return (ref = []).concat.apply(ref, (function () {
-            var results;
-            results = [];
-            for (id in objectsById) {
+            var results = [];
+            for (var id in objectsById) {
                 arr = objectsById[id];
-                if (arr.length === arrays.length) {
+                if (arr.length === arrays.length)
+                    // Always return the first object
                     results.push(arr[0]);
-                }
             }
             return results;
         })());
     }
 
     private intersectArraysOfInventoryItems(...items: Inventory.InventoryItem[][]): Inventory.InventoryItem[] {
+        // Use both item identifiers and pass all items arrays to this.intersectArraysOfObjects
         return this.intersectArraysOfObjects.apply(this, (<any[]>[['itemHash', 'instanceId']]).concat(items));
     }
 
     private diffArraysOfObjects(uniqueIdentifierAttributeNames: string[], ...arrays: any[][]) {
-        var arr, i, id, j, len, len1, name, obj, objectsById, ref;
-        objectsById = {};
-        for (i = 0, len = arrays.length; i < len; i++) {
-            arr = arrays[i];
-            for (j = 0, len1 = arr.length; j < len1; j++) {
-                obj = arr[j];
-                var matches = true;
+        var ref;
+
+        // Object to sort objects into (by the uniqueIdentifierAttributeNames)
+        var objectsById = {};
+        // Loop through the input arrays
+        for (var arrayIndex = 0; arrayIndex < arrays.length; arrayIndex++) {
+            var arr = arrays[arrayIndex];
+            // Loop through each array of objects
+            for (var obj of arr) {
+                // Construct a unique identifier string based on the object and uniqueIdentifierAttributeNames
                 var str = '';
                 for (var nameIndex = 0; nameIndex < uniqueIdentifierAttributeNames.length; nameIndex++) {
                     str += (obj[uniqueIdentifierAttributeNames[nameIndex]] + ',') || '';
                 }
+                // Remove the trailing comma
                 if (str.length > 1)
                     str = str.substring(0, str.length - 2)
-                if ((objectsById[str] != undefined && i > 0) || i < 1 && objectsById[str] == undefined)
+                // If the object is not in objectsById and this is not the first array,
+                // or if this is the first array and the object is not in objectsById
+                if ((objectsById[str] != undefined && arrayIndex > 0) || arrayIndex < 1 && objectsById[str] == undefined)
+                    // Add the object to objectsById
                     (objectsById[str] || (objectsById[str] = [])).push(obj);
             }
         }
+
+        // Return the objects that have only one object per id
         return (ref = []).concat.apply(ref, (function () {
-            var results;
-            results = [];
-            for (id in objectsById) {
+            var results = [];
+            for (var id in objectsById) {
                 arr = objectsById[id];
-                if (arr.length === 1) {
+                if (arr.length === 1)
                     results.push(arr[0]);
-                }
             }
             return results;
         })());
@@ -87,7 +100,10 @@ class InventoryTransferManager {
     private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[], bucket?: Inventory.InventoryBucket) {
         // TODO: Remove all this duplicate code
         // It looks like we can always use both attribs
+
+        // Array of attributes to check in items to confirm equality
         var checkAttributeNames = ['instanceId', 'itemHash'];
+        // Return the array of temp items from this.diffArraysOfObjects
         return this.diffArraysOfObjects(checkAttributeNames, lookupBucketContents, designatedItems);
     }
 
@@ -287,7 +303,7 @@ class InventoryTransferManager {
                 character.bucketCollection.getItems(currentBucket),
                 DataStores.DataStores.appConfig.currentData.designatedItems);
             items.push.apply(items, _.map(
-                _.reject(intersection, (item) => item.getIsEquipped() == false),
+                _.reject(intersection, (item) => item.getIsEquipped() == true),
                 (item) => {
                     return { item: item, char: character.character.id };
                 }));
@@ -342,6 +358,10 @@ class InventoryTransferManager {
     }
 
     private equipDesignatedItem(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, targetCharacter: Character.Character, bucketDesignatedItems: Inventory.InventoryItem[]) {
+        // If the bucket is a materials or consumables bucket, nothing can be equipped, so just return
+        if (currentBucket == Inventory.InventoryBucket.Materials || currentBucket == Inventory.InventoryBucket.Consumables)
+            return;
+
         var state = this.inventoryMan.currentState;
         var characters = DataStores.DataStores.appConfig.currentData.characters;
 
@@ -357,7 +377,7 @@ class InventoryTransferManager {
         var nonExoticIntersection = _.reject(intersection, (item) => item.tier == Inventory.InventoryItemTier.Exotic);
         // If there are items availiable for equip, equip them, then return
         if (nonExoticIntersection.length > 0) {
-            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], intersection[0]);
+            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], nonExoticIntersection[0]);
             return;
         }
 
@@ -399,6 +419,10 @@ class InventoryTransferManager {
     }
 
     private moveEquippedItems(currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, targetCharacter: Character.Character, bucketDesignatedItems: Inventory.InventoryItem[]) {
+        // If the bucket is a materials or consumables bucket, nothing can be equipped, so just return
+        if (currentBucket == Inventory.InventoryBucket.Materials || currentBucket == Inventory.InventoryBucket.Consumables)
+            return;
+
         var state = this.inventoryMan.currentState;
         var characters = DataStores.DataStores.appConfig.currentData.characters;
 
@@ -424,14 +448,15 @@ class InventoryTransferManager {
             var toEquip: Inventory.InventoryItem;
             if (state.characters[item.char].bucketCollection.getItems(currentBucket).length == 1) {
                 // Get a list of temp items in the vault
-                var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(state.vault.bucketCollection.getItems(currentVaultBucket), bucketDesignatedItems);
+                var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(
+                    state.vault.bucketCollection.getItems(currentVaultBucket),
+                    bucketDesignatedItems);
                 var vaultTemp;
                 // If there are any temp items in the vault
                 var acceptableTemps = _.reject(
-                    _.filter(
-                        vaultTemps,
-                        (item) => item.tier == Inventory.InventoryItemTier.Exotic),
-                    (item) => ParserUtils.getGearBucketForVaultItem(item) == currentBucket);
+                    vaultTemps,
+                    (item) => item.tier == Inventory.InventoryItemTier.Exotic ||
+                        ParserUtils.getGearBucketForVaultItem(item) != currentBucket);
                 // If not, check to see if there are any temp items in the vault
                 var acceptableItems = _.reject(
                     vaultTemps,
@@ -458,10 +483,11 @@ class InventoryTransferManager {
                 this.inventoryMan.enqueueMoveOperation(state.characters[item.char], false, vaultTemp);
                 toEquip = vaultTemp;
             }
-            // If there are unequipped items in the item's character's current bucket, find the first unequipped item and mark it as toEquip
+            // If there are unequipped items in the item's character's current bucket,
+            // find the first unequipped item and mark it as toEquip
             else {
                 var sourceBucket = state.characters[item.char].bucketCollection.getItems(currentBucket);
-                var toEquip = _.reject(sourceBucket, (item) => item.getIsEquipped())[0];
+                var toEquip = _.reject(sourceBucket, (item) => item.getIsEquipped() == true)[0];
             }
             // Equip toEquip to free up the designated item for removal
             this.inventoryMan.enqueueEquipOperation(state.characters[item.char], toEquip);
