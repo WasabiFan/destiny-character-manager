@@ -25,5 +25,9 @@
     "request": "^2.60.0",
     "stack-trace": "0.0.9",
     "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-typescript": "^2.8.0"
   }
 }
