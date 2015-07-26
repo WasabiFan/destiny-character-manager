@@ -151,7 +151,7 @@ export class InventoryManager {
 
     public enqueueEquipOperation(character: CharacterInventoryState, item: Inventory.InventoryItem) {
         // If it's in the vault, we can't equip it
-        if (ParserUtils.isVault(item.bucket))
+        if (ParserUtils.isVaultBucket(item.bucket))
             throw new Errors.Exception('The requested item is currently in the vault and cannot be equipped.', Errors.ExceptionCode.InvalidInventoryOperation);
 
         // Get the bucket that we're swapping

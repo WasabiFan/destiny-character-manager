@@ -267,7 +267,7 @@ export class DestinyCommandConsole {
             var chalkifyBucket = chalk.gray, chalkifyTier = chalk.white;
 
             var itemBucket = items[i].bucket;
-            if (ParserUtils.isVault(itemBucket))
+            if (ParserUtils.isVaultBucket(itemBucket))
                 itemBucket = ParserUtils.getGearBucketForVaultItem(items[i]);
 
             switch (itemBucket) {

@@ -60,11 +60,11 @@ class GearApi {
     private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket, endpointType: GearEndpointType): Inventory.InventoryItem {
         var item: Inventory.InventoryItem = new Inventory.InventoryItem();
 
-        if (ParserUtils.isWeapon(currentBucket)) {
+        if (ParserUtils.isWeaponBucket(currentBucket)) {
             item = new Inventory.WeaponItem();
             (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
         }
-        else if (ParserUtils.isInventory(currentBucket)) {
+        else if (ParserUtils.isInventoryBucket(currentBucket)) {
             item = new Inventory.StackableItem();
             var stackSizeDiv = itemCheerio.find('div.stackSize');
             if (stackSizeDiv.length > 0)

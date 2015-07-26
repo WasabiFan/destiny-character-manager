@@ -124,22 +124,27 @@ class ParserUtils {
         return this.inventoryBucketLookupTable[bucketString];
     }
 
-    public static isWeapon(bucket: Inventory.InventoryBucket): boolean {
+    public static isWeaponBucket(bucket: Inventory.InventoryBucket): boolean {
         return bucket == Inventory.InventoryBucket.PrimaryWeapon
             || bucket == Inventory.InventoryBucket.SpecialWeapon
             || bucket == Inventory.InventoryBucket.HeavyWeapon;
     }
 
-    public static isVault(bucket: Inventory.InventoryBucket): boolean {
+    public static isVaultBucket(bucket: Inventory.InventoryBucket): boolean {
         return bucket == Inventory.InventoryBucket.VaultArmor
             || bucket == Inventory.InventoryBucket.VaultGeneral
             || bucket == Inventory.InventoryBucket.VaultWeapon;
     }
 
-    public static isInventory(bucket: Inventory.InventoryBucket): boolean {
+    public static isInventoryBucket(bucket: Inventory.InventoryBucket): boolean {
         return bucket == Inventory.InventoryBucket.Consumables
             || bucket == Inventory.InventoryBucket.Materials;
 
+    }
+
+    public static isEngram(item: Inventory.InventoryItem) {
+        // Should use item hash, but manually finding 40+ item hashes would take a while
+        return item.name.indexOf('Engram') >= 0;
     }
 
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
@@ -195,7 +200,7 @@ class ParserUtils {
     }
 
     public static getGearBucketForVaultItem(item: Inventory.InventoryItem): Inventory.InventoryBucket {
-        if (!this.isVault(item.bucket))
+        if (!this.isVaultBucket(item.bucket))
             return item.bucket;
 
         // Non-standard weapons
