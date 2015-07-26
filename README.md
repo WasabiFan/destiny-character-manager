@@ -8,10 +8,10 @@ The Destiny character manager provides an easy-to-use interface for you to manag
 There are two ways that you can get the app ready to run. Both of them will require you to clone the repo, but from there you can either open the project in Visual Studio or compile and run the code from the command line. The instructions below will assume that you already have a local copy of this repo, and have [Node.js](https://nodejs.org/) installed.
 
 #### Running from Visual Studio
-To run the project from Visual Studio, install the [Node.js Tools for VS](https://nodejstools.codeplex.com/). Once those are installed, double-click the `destiny-character-manager\ManagerConsole\ManagerConsole\ManagerConsole.njsproj` file to open it. In the Solution Explorer, right-click on `npm` in the tree and select "Install Missing npm Packages". It will go off and install our dependencies. When it finishes, you should be able to click the "Start" button to launch the app.
+To run the project from Visual Studio, install the [Node.js Tools for VS](https://nodejstools.codeplex.com/). Once those are installed, double-click the `destiny-character-manager/ManagerConsole/ManagerConsole/ManagerConsole.njsproj` file to open it. In the Solution Explorer, right-click on `npm` in the tree and select "Install Missing npm Packages". It will go off and install our dependencies. When it finishes, you should be able to click the "Start" button to launch the app.
 
 #### Running from the command line
-To compile and run the code from the command line (on any Node-supported OS), run the following commands from a terminal or CMD session in the `destiny-character-manager\ManagerConsole\ManagerConsole\` folder:
+To compile and run the code from the command line (on any Node-supported OS), run the following commands from a terminal or CMD session in the `destiny-character-manager/ManagerConsole/ManagerConsole` folder:
 
 ```
 > npm install
