@@ -136,6 +136,15 @@ class ParserUtils {
             || bucket == Inventory.InventoryBucket.VaultWeapon;
     }
 
+    public static isArmorBucket(bucket: Inventory.InventoryBucket): boolean {
+        return bucket == Inventory.InventoryBucket.VaultArmor
+            || bucket == Inventory.InventoryBucket.Helmet
+            || bucket == Inventory.InventoryBucket.Gauntlets
+            || bucket == Inventory.InventoryBucket.ChestArmor
+            || bucket == Inventory.InventoryBucket.LegArmor
+            || bucket == Inventory.InventoryBucket.ClassItem;
+    }
+
     public static isInventoryBucket(bucket: Inventory.InventoryBucket): boolean {
         return bucket == Inventory.InventoryBucket.Consumables
             || bucket == Inventory.InventoryBucket.Materials;

@@ -41,6 +41,7 @@
     <Content Include="package.json" />
     <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
+    <TypeScriptCompile Include="bungie-api\armory-api.ts" />
     <TypeScriptCompile Include="utils\command-console.ts" />
     <TypeScriptCompile Include="utils\data-stores.ts" />
     <TypeScriptCompile Include="bungie-api\gear-api.ts" />

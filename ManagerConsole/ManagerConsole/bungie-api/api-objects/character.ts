@@ -36,5 +36,6 @@ export class AliasedCharacter extends Character {
 export enum CharacterClass {
     Titan,
     Hunter,
-    Warlock
+    Warlock,
+    Unknown = -1
 }

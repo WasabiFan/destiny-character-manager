@@ -22,8 +22,11 @@ class VaultApi {
                     var cheerioItem = $(element);
                     var itemInfo = me.loadVaultItemFromCheerio(cheerioItem);
 
-                    var itemPromise = DataStores.DataStores.armoryCache.currentData.getOrLoadItemTierForHash(itemInfo.itemHash).then((tier) => {
-                        itemInfo.tier = tier;
+                    var itemPromise = DataStores.DataStores.armoryCache.currentData.getOrLoadItemMetadataForHash(itemInfo.itemHash).then((metadata) => {
+                        itemInfo.tier = metadata.tier;
+                        if (itemInfo instanceof Inventory.ArmorItem)
+                            (<Inventory.ArmorItem>itemInfo).class = metadata.class;
+
                         items.push(itemInfo);
                     });
 
@@ -32,6 +35,8 @@ class VaultApi {
 
                 Promise.all(promises).then(() => {
                     resolve(items);
+                }).catch(error => {
+                    reject(error);
                 });
             });
         });
@@ -50,7 +55,7 @@ class VaultApi {
                 (<Inventory.WeaponItem> newItem).damageType = ParserUtils.parseDamageType(itemCheerio.data('damagetype'));
             case 'Stored Armor':
                 if (newItem == undefined) {
-                    newItem = new Inventory.GearItem();
+                    newItem = new Inventory.ArmorItem();
                     newItem.bucket = Inventory.InventoryBucket.VaultArmor;
                 }
 
@@ -70,31 +75,6 @@ class VaultApi {
         newItem.tier = Inventory.InventoryItemTier.Unknown;
 
         return newItem;
-    }
-
-    public static loadTierForItemHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
-        var promise = new Promise((resolve, reject) => {
-            Bungie.loadEndpointHtml('https://www.bungie.net/en/Armory/Detail', {
-                item: itemHash
-            }).then((pageHtml: string) => {
-                var $ = cheerio.load(pageHtml);
-                var titleStr = $("meta[property='og:title']").attr('content');
-                var tierRegex = /-\s*([Ee]xotic|[Ll]egendary|[Rr]are|[Uu]ncommon|[Cc]ommon)\s*-/;
-                var matches = tierRegex.exec(titleStr);
-
-                if (matches == null) {
-                    resolve(Inventory.InventoryItemTier.Unknown);
-                    return;
-                }
-
-                var tierStr = matches[1];
-                resolve(ParserUtils.parseInventoryItemTier(tierStr));
-            }).catch((errorData) => {
-                reject(errorData);
-            });
-        });
-
-        return promise;
     }
 }
 

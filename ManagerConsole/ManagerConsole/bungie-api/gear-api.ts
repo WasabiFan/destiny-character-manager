@@ -13,6 +13,8 @@ class GearApi {
         var targetUrl = Bungie.buildEndpointStr(endpointType == GearEndpointType.Gear ? 'Gear' : 'Inventory', DataStores.DataStores.appConfig.currentData.authMember, targetCharacter);
         var promise = new Promise((resolve, reject) => {
             Bungie.loadEndpointHtml(targetUrl).then(html => {
+                var armoryPromises: Promise<any>[] = [];
+
                 var $ = cheerio.load(html);
                 var items: Inventory.InventoryItem[] = [];
 
@@ -27,11 +29,20 @@ class GearApi {
                     bucketCheerio.find('.bucketItem').each((i, itemElem) => {
                         var itemCheerio = $(itemElem);
                         var newItem = this.loadGearFromCheerio(itemCheerio, currentBucket, endpointType);
-                        items.push(newItem);
+                        armoryPromises.push(DataStores.DataStores.armoryCache.currentData.getOrLoadItemMetadataForHash(newItem.itemHash).then(metadata => {
+                            if (newItem instanceof Inventory.ArmorItem)
+                                (<Inventory.ArmorItem>newItem).class = metadata.class;
+
+                            items.push(newItem);
+                        }));
                     });
                 });
 
-                resolve(items);
+                Promise.all(armoryPromises).then(() => {
+                    resolve(items);
+                }).catch(error => {
+                    reject(error);
+                });
             }).catch((error) => {
                 reject(error);
             });
@@ -57,12 +68,16 @@ class GearApi {
         return promise;
     }
 
+
     private static loadGearFromCheerio(itemCheerio: Cheerio, currentBucket: Inventory.InventoryBucket, endpointType: GearEndpointType): Inventory.InventoryItem {
         var item: Inventory.InventoryItem = new Inventory.InventoryItem();
 
         if (ParserUtils.isWeaponBucket(currentBucket)) {
             item = new Inventory.WeaponItem();
             (<Inventory.WeaponItem> item).damageType = ParserUtils.parseDamageType(itemCheerio.find('.destinyTooltip').data('damagetype'));
+        }
+        else if (ParserUtils.isArmorBucket(currentBucket)) {
+            item = new Inventory.ArmorItem();
         }
         else if (ParserUtils.isInventoryBucket(currentBucket)) {
             item = new Inventory.StackableItem();

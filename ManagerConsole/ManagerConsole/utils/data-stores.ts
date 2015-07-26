@@ -4,7 +4,7 @@ import fs = require('fs');
 import Membership = require('../bungie-api/api-objects/membership');
 import Character = require('../bungie-api/api-objects/character');
 import Inventory = require('../bungie-api/api-objects/inventory');
-import Vault = require('../bungie-api/vault-api');
+import Armory = require('../bungie-api/armory-api');
 import LocalDataStore = require('./local-data-store');
 import Errors = require('./errors');
 var destiny = require('destiny-client')();
@@ -87,19 +87,19 @@ export class AppConfiguration {
 }
 
 export class ArmoryCache {
-    public itemTiers: { [itemHash: string]: Inventory.InventoryItemTier } = {};
+    public itemMetadata: { [itemHash: string]: Armory.ItemArmoryMetadata } = {};
 
-    public getOrLoadItemTierForHash(itemHash: string): Promise<Inventory.InventoryItemTier> {
-        if (!_.isUndefined(this.itemTiers[itemHash]))
-            return Promise.resolve(this.itemTiers[itemHash]);
+    public getOrLoadItemMetadataForHash(itemHash: string): Promise<Armory.ItemArmoryMetadata> {
+        if (!_.isUndefined(this.itemMetadata[itemHash]))
+            return Promise.resolve(this.itemMetadata[itemHash]);
 
-        var tierPromise = Vault.loadTierForItemHash(itemHash);
-        tierPromise.then((tier) => {
-            this.itemTiers[itemHash] = tier;
+        var metadataPromise = Armory.ArmoryApi.loadArmoryMetadataForItemHash(itemHash);
+        metadataPromise.then((metadata) => {
+            this.itemMetadata[itemHash] = metadata;
             DataStores.armoryCache.save();
         });
 
-        return tierPromise;
+        return metadataPromise;
     }
 }
 
@@ -114,7 +114,7 @@ export class DataStores {
         this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Character.AliasedCharacter, Membership.Member);
         this.appConfig.load();
 
-        this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem);
+        this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Armory.ItemArmoryMetadata);
         this.armoryCache.load();
     }
 }

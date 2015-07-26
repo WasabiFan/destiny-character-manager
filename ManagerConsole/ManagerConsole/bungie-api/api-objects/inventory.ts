@@ -1,4 +1,6 @@
-﻿export class InventoryItem {
+﻿import Character = require('./character');
+
+export class InventoryItem {
     public name: string;
     public tier: InventoryItemTier;
     public type: InventoryItemType;
@@ -43,6 +45,10 @@ export class GearItem extends InventoryItem {
 
 export class WeaponItem extends GearItem {
     public damageType: DamageType;
+}
+
+export class ArmorItem extends GearItem {
+    public class: Character.CharacterClass;
 }
 
 export enum InventoryItemTier {
