@@ -114,7 +114,7 @@ export class DataStores {
         this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Character.AliasedCharacter, Membership.Member);
         this.appConfig.load();
 
-        this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Armory.ItemArmoryMetadata);
+        this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Inventory.ArmorItem, Armory.ItemArmoryMetadata);
         this.armoryCache.load();
     }
 }
