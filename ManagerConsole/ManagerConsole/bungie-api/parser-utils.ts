@@ -156,6 +156,13 @@ class ParserUtils {
         return item.name.indexOf('Engram') >= 0;
     }
 
+    public static isTypeEquippable(item: Inventory.InventoryItem, targetCharacter?: Character.Character) {
+        return !this.isEngram(item)
+            && ((_.isUndefined(targetCharacter)
+                || _.isUndefined((<Inventory.ArmorItem>item).class))
+                || targetCharacter.characterClass == (<Inventory.ArmorItem>item).class);
+    }
+
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
         switch (type) {
             case Inventory.InventoryItemType.TitanMark:
