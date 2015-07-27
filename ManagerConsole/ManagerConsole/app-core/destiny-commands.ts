@@ -1,4 +1,5 @@
 ﻿import _ = require('underscore');
+import fs = require('fs');
 var package = require('../package.json');
 import chalk = require('chalk');
 import Table = require('easy-table');
@@ -62,7 +63,8 @@ export class DestinyCommandConsole {
                     new Console.Command('debug', this.setDebugAction.bind(this))
                     ]),
                 new Console.Command('reload', this.reloadConfigAction.bind(this)),
-                new Console.Command('save', this.saveConfigAction.bind(this))
+                new Console.Command('save', this.saveConfigAction.bind(this)),
+                new Console.Command('load-cookie', this.loadCookieAction.bind(this))
             ]),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
@@ -395,7 +397,32 @@ export class DestinyCommandConsole {
         console.log(table.toString());
     }
 
-    private updateStateAction(fullAction: string): Promise<any> {
+    private updateStateAction(fullArgs: string): Promise<any> {
         return this.reloadState();
+    }
+
+    private loadCookieAction(fullArgs: string, ...fileName: string[]): Promise<any> {
+        var fileStr = fileName.join(' ');
+        if (fileName.length <= 0 || !fs.existsSync(fileStr)) {
+            return Promise.reject(new Errors.Exception('The given cookie file name is not valid.'));
+        }
+
+        var promise = new Promise((resolve, reject) => {
+            fs.readFile(fileStr, (error, data) => {
+
+                if (_.isUndefined(error)) {
+                    reject(new Errors.Exception('An error was encountered while reading from the cookie file.', new Errors.Exception(error.message + '(code ' + error.code + ')')));
+                    return;
+                }
+
+                DataStores.DataStores.appConfig.currentData.authCookie = data.toString().trim();
+                DataStores.DataStores.appConfig.save();
+
+                resolve();
+            });
+
+        });
+
+        return promise;
     }
 }
