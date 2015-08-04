@@ -1,4 +1,6 @@
 ﻿import _ = require('underscore');
+import JSONStream = require('JSONStream');
+var stripper = require('strip-bom-stream');
 
 import fs = require('fs');
 import Membership = require('../bungie-api/api-objects/membership');
@@ -80,6 +82,48 @@ export class AppConfiguration {
 
                 resolve();
             });
+        });
+
+        return promise;
+    }
+
+    public loadAuthFromHar(harPath: string): Promise<any> {
+        if (harPath.length <= 0 || !fs.existsSync(harPath)) {
+            return Promise.reject(new Errors.Exception('The given file name is not valid.'));
+        }
+
+        // TODO: Print basic HAR info
+
+        var promise = new Promise((resolve, reject) => {
+            var entryStream = JSONStream.parse('log.entries.*');
+
+            var cookies: any[] = [];
+            var csrf: string, apiKey: string;
+            entryStream.on('data', harEntry => {
+                var possibleCookies = _.filter(harEntry.response.cookies.concat(harEntry.request.cookies), (cookie: any) =>
+                    (cookie.name.indexOf('bungle') == 0 || cookie.name.indexOf('__') == 0));
+
+                cookies = _.uniq(possibleCookies.concat(cookies), (cookie) => cookie.name);
+
+                _.each(harEntry.request.headers, (header: any) => {
+                    var lowerName = header.name.toLowerCase();
+
+                    if (lowerName == 'x-csrf')
+                        csrf = header.value;
+                    else if (lowerName == 'x-api-key')
+                        apiKey = header.value;
+                });
+            }).on('end', () => {
+                var cookieStr = _.map(cookies, cookie => cookie.name + '=' + cookie.value + ';').join(' ');
+
+                this.authCookie = cookieStr;
+                this.apiKey = apiKey;
+                this.csrf = csrf;
+
+                resolve();
+            });
+
+            fs.createReadStream(harPath).pipe(stripper()).pipe(entryStream);
         });
 
         return promise;

@@ -42,6 +42,7 @@
     <TypeScriptCompile Include="bungie-api\api-objects\bucket-gear-collection.ts" />
     <TypeScriptCompile Include="bungie-api\api-objects\character.ts" />
     <TypeScriptCompile Include="bungie-api\armory-api.ts" />
+    <TypeScriptCompile Include="Scripts\typings\JSONStream\JSONStream.d.ts" />
     <TypeScriptCompile Include="utils\command-console.ts" />
     <TypeScriptCompile Include="utils\data-stores.ts" />
     <TypeScriptCompile Include="bungie-api\gear-api.ts" />
@@ -68,6 +69,7 @@
     <Folder Include="bungie-api\api-objects\" />
     <Folder Include="api-helpers\" />
     <Folder Include="app-core\" />
+    <Folder Include="Scripts\typings\JSONStream\" />
     <Folder Include="utils\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />

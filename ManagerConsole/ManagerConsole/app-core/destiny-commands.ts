@@ -64,7 +64,8 @@ export class DestinyCommandConsole {
                     ]),
                 new Console.Command('reload', this.reloadConfigAction.bind(this)),
                 new Console.Command('save', this.saveConfigAction.bind(this)),
-                new Console.Command('load-cookie', this.loadCookieAction.bind(this))
+                new Console.Command('load-text-cookie', this.loadTextCookieAction.bind(this)),
+                new Console.Command('load-auth', this.loadAuthAction.bind(this))
             ]),
             new Console.Command('list', this.listAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
@@ -401,7 +402,7 @@ export class DestinyCommandConsole {
         return this.reloadState();
     }
 
-    private loadCookieAction(fullArgs: string, ...fileName: string[]): Promise<any> {
+    private loadTextCookieAction(fullArgs: string, ...fileName: string[]): Promise<any> {
         var fileStr = fileName.join(' ');
         if (fileName.length <= 0 || !fs.existsSync(fileStr)) {
             return Promise.reject(new Errors.Exception('The given cookie file name is not valid.'));
@@ -410,7 +411,7 @@ export class DestinyCommandConsole {
         var promise = new Promise((resolve, reject) => {
             fs.readFile(fileStr, (error, data) => {
 
-                if (_.isUndefined(error)) {
+                if (!_.isNull(error)) {
                     reject(new Errors.Exception('An error was encountered while reading from the cookie file.', new Errors.Exception(error.message + '(code ' + error.code + ')')));
                     return;
                 }
@@ -424,5 +425,10 @@ export class DestinyCommandConsole {
         });
 
         return promise;
+    }
+
+    private loadAuthAction(argsPath: string): Promise<any> {
+        return DataStores.DataStores.appConfig.currentData.loadAuthFromHar(argsPath);
+
     }
 }
