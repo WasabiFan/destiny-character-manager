@@ -114,6 +114,10 @@ export class AppConfiguration {
                         apiKey = header.value;
                 });
             }).on('end', () => {
+                if (cookies.length < 10 || _.isUndefined(apiKey) || _.isUndefined(csrf)) {
+                    reject(new Errors.Exception('We were unable to load all of the required data from the HAR file.'));
+                }
+
                 var cookieStr = _.map(cookies, cookie => cookie.name + '=' + cookie.value + ';').join(' ');
 
                 this.authCookie = cookieStr;
