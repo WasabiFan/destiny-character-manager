@@ -67,7 +67,10 @@ export class DestinyCommandConsole {
                 new Console.Command('load-text-cookie', this.loadTextCookieAction.bind(this)),
                 new Console.Command('load-auth', this.loadAuthAction.bind(this))
             ]),
-            new Console.Command('list', this.listAction.bind(this)),
+            new Console.Command('list-items', this.listItemsAction.bind(this)),
+            new Console.Command('list', this.listItemsAction.bind(this)),
+            new Console.Command('list-characters', this.listCharsAction.bind(this)),
+            new Console.Command('list-chars', this.listCharsAction.bind(this)),
             new Console.Command('parse', this.testFilterAction.bind(this)),
             new Console.Command('mark', this.markAction.bind(this)),
             new Console.Command('umark', this.unmarkAction.bind(this)),
@@ -155,7 +158,7 @@ export class DestinyCommandConsole {
         DataStores.DataStores.appConfig.save();
     }
 
-    private listAction(fullArgs: string, characterAlias: string, filterStr: string) {
+    private listItemsAction(fullArgs: string, characterAlias: string, filterStr: string) {
         this.assertFullAuth();
 
         var filter = new Filters.InventoryFilter(filterStr);
@@ -167,6 +170,20 @@ export class DestinyCommandConsole {
 
         var filteredItems = filter.findMatchesInCollection(items);
         this.printItemTable(filteredItems);
+    }
+
+    private listCharsAction(fullArgs: string) {
+        var characterTable = new Table();
+
+        for (var character of DataStores.DataStores.appConfig.currentData.characters) {
+            characterTable.cell('Alias', character.alias);
+            characterTable.cell('Class', Character.CharacterClass[character.characterClass]);
+            characterTable.cell('ID (for geeks)', character.id);
+
+            characterTable.newRow();
+        }
+
+        console.log(characterTable.toString());
     }
 
     private testFilterAction(fullArgs: string) {
