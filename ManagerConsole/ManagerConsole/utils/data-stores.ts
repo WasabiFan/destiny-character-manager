@@ -78,7 +78,26 @@ export class AppConfiguration {
                     return;
                 }
 
-                (<any[]>result.characters).forEach(characterApiObj => this.characters.push(Character.AliasedCharacter.loadFromApiResponse(characterApiObj)));
+                (<any[]>result.characters).forEach(characterApiObj => {
+                    var character = Character.AliasedCharacter.loadFromApiResponse(characterApiObj);
+                    if (_.any(this.characters, otherCharacter => otherCharacter.alias == character.alias)) {
+                        var pastSuffixes = _.chain(this.characters)
+                            // Find all the characters that start with the same alias text
+                            .filter(otherCharacter =>
+                                otherCharacter.alias.indexOf(character.alias) == 0)
+                            // Get their suffix number (no number is zero)
+                            .map(otherCharacter =>
+                                parseInt(otherCharacter.alias.substring(character.alias.length)) || 0)
+                            .value();
+
+                        // Our new character will get a suffix of one greater than the currently-highest suffix
+                        var newSuffix = _.max(pastSuffixes) + 1;
+                        character.alias += newSuffix;
+                    }
+
+                    this.characters.push(character);
+                });
+
 
                 resolve();
             });
