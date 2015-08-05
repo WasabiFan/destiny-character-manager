@@ -428,7 +428,23 @@ export class DestinyCommandConsole {
     }
 
     private loadAuthAction(argsPath: string): Promise<any> {
-        return DataStores.DataStores.appConfig.currentData.loadAuthFromHar(argsPath);
 
+        var promise = new Promise((resolve, reject) => {
+            DataStores.DataStores.appConfig.currentData.loadAuthFromHar(argsPath).then(() => {
+                console.log('Auth data loaded.');
+
+                DataStores.DataStores.appConfig.save();
+
+                this.reloadState().then(() => {
+                    resolve();
+                }).catch((error) => {
+                    reject(error);
+                });
+            }).catch((error) => {
+                reject(error);
+            });
+        });
+
+        return promise;
     }
 }
