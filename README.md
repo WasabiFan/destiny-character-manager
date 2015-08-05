@@ -1,6 +1,6 @@
 Destiny Character Management Console
 ================================
-The Destiny character manager provides an easy-to-use interface for you to manage your Destiny inventory. It automates the process of moving weapons and other inventory items between characters without requiring you to enter the in-game Tower to manage your gear. This lets you keep all your favorite things close at hand, while keeping unwanted items out of sight. We can maintain inventories of any size, with anywhere from one to three characters.
+This app provides an easy-to-use interface for you to manage your Destiny inventory. It automates the process of moving weapons and other inventory items between characters without requiring you to enter the in-game Tower, letting you keep all your favorite things close at hand. We can maintain inventories of any size, with anywhere from one to three characters.
 
 ## Quick-start
 
@@ -34,7 +34,7 @@ Destiny character management console v0.1.0
 >
 ```
 
-Once the prompt (`>`) appears, it is ready to start accepting input. To see what you can type, check out the [Available commands](wiki/Available commands) wiki page.
+Once the prompt (`>`) appears, it is ready to start accepting input. To see what you can type, check out the [Available commands](https://github.com/WasabiFan/destiny-character-manager/wiki/Available-commands) wiki page.
 
 ### TL; DR
 Either open the ManagerConsole project in Visual Studio or run the following commands from the same folder as `app.ts`:
