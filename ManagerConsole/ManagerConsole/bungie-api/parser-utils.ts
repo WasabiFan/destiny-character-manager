@@ -1,4 +1,5 @@
-﻿import Inventory = require('./api-objects/inventory');
+﻿import _ = require('underscore');
+import Inventory = require('./api-objects/inventory');
 import Character = require('./api-objects/character');
 import Membership = require('./api-objects/membership');
 

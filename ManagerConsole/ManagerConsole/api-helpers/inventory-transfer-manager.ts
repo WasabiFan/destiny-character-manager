@@ -282,8 +282,8 @@ class InventoryTransferManager {
         var exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter).exoticEquipped;
         // Get array of non-exotic designated items in the target bucket
         var nonExoticIntersection = _.reject(intersection, (item) => item.tier == Inventory.InventoryItemTier.Exotic);
-        // If there is not an exotic equipped, and there are designated items availiable, equip the first one
-        if (exoticEquipped == false && nonExoticIntersection.length > 0)
+        // If there is not an exotic equipped, and there are designated items availiable, equip the first one that can be equipped
+        if (exoticEquipped == false && nonExoticIntersection.length > 0 && ParserUtils.isTypeEquippable(nonExoticIntersection[0], targetCharacter))
             this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], nonExoticIntersection[0]);
     }
 
@@ -375,16 +375,20 @@ class InventoryTransferManager {
             return;
         // We don't want to equip exotic items, if possible
         var nonExoticIntersection = _.reject(intersection, (item) => item.tier == Inventory.InventoryItemTier.Exotic);
+        // Array of non-exotic designated items that can be equipped
+        var nonExoticEquippableIntersection = _.filter(nonExoticIntersection, (item) => ParserUtils.isTypeEquippable(item, targetCharacter));
         // If there are items availiable for equip, equip them, then return
-        if (nonExoticIntersection.length > 0) {
-            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], nonExoticIntersection[0]);
+        if (nonExoticEquippableIntersection.length > 0) {
+            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], nonExoticEquippableIntersection[0]);
             return;
         }
 
+        // Array of equippable designated items in the target bucket
+        var equippableIntersection = _.reject(intersection, (item) => ParserUtils.isTypeEquippable(item, targetCharacter));
         // If there is no exotic equipped, and no non-exotic can be equipped, equip a designated exotic
         var exoticEquipped = this.getExoticEquipped(state, currentBucket, targetCharacter);
-        if (!exoticEquipped && intersection.length > 0) {
-            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], intersection[0]);
+        if (!exoticEquipped && equippableIntersection.length > 0) {
+            this.inventoryMan.enqueueEquipOperation(state.characters[targetCharacter.id], equippableIntersection[0]);
             return;
         }
         else {
@@ -458,9 +462,9 @@ class InventoryTransferManager {
                     (item) => item.tier == Inventory.InventoryItemTier.Exotic ||
                         ParserUtils.getGearBucketForVaultItem(item) != currentBucket);
                 // If not, check to see if there are any temp items in the vault
-                var acceptableItems = _.reject(
-                    vaultTemps,
-                    (item) => ParserUtils.getGearBucketForVaultItem(item) == currentBucket);
+                acceptableTemps = _.filter(
+                    acceptableTemps,
+                    (iteratorItem) => ParserUtils.isTypeEquippable(iteratorItem, characters[item.char]));
                 // If there are non-exotic temps in the vault, use the first one
                 if (acceptableTemps.length > 0)
                     vaultTemp = acceptableTemps[0];
@@ -472,10 +476,12 @@ class InventoryTransferManager {
                     for (var charId in state.characters) {
                         var character = state.characters[charId];
                         var temps: Inventory.InventoryItem[] = this.findTempItems(character.bucketCollection.getItems(currentBucket), DataStores.DataStores.appConfig.currentData.designatedItems);
+                        // Only equippable temps should be moved
+                        temps = _.filter(temps, (iteratorItem) => ParserUtils.isTypeEquippable(iteratorItem, characters[item.char]));
                         if (temps.length > 0) {
                             // Move that item to the vault for further processing
                             this.inventoryMan.enqueueMoveOperation(character, true, temps[0]);
-                            vaultTemp = temps[0]
+                            vaultTemp = temps[0];
                         }
                     }
 
@@ -484,10 +490,11 @@ class InventoryTransferManager {
                 toEquip = vaultTemp;
             }
             // If there are unequipped items in the item's character's current bucket,
-            // find the first unequipped item and mark it as toEquip
+            // find the first equippable unequipped item and mark it as toEquip
             else {
                 var sourceBucket = state.characters[item.char].bucketCollection.getItems(currentBucket);
-                var toEquip = _.reject(sourceBucket, (item) => item.getIsEquipped() == true)[0];
+                var toEquip = _.reject(sourceBucket, (iteratorItem) => iteratorItem.getIsEquipped() == true ||
+                    !ParserUtils.isTypeEquippable(iteratorItem, characters[item.char]))[0];
             }
             // Equip toEquip to free up the designated item for removal
             this.inventoryMan.enqueueEquipOperation(state.characters[item.char], toEquip);
@@ -524,10 +531,12 @@ class InventoryTransferManager {
     }
 
     private checkTransferNeeded(state: InventoryManager.InventoryState, target: Character.Character, bucketIndex: Inventory.InventoryBucket, bucketDesignatedItems: Inventory.InventoryItem[]) {
+        // Get the list of items in the target bucket
+        var bucketContents = state.characters[target.id].bucketCollection.getItems(bucketIndex);
         // Get the list of designated items in the target bucket
-        var intersection = this.intersectArraysOfInventoryItems(state.characters[target.id].bucketCollection.getItems(bucketIndex), bucketDesignatedItems);
+        var intersection = this.intersectArraysOfInventoryItems(bucketContents, bucketDesignatedItems);
         // Check to see if all the designated items and only the designated items are in the target bucket
-        if (intersection.length == bucketDesignatedItems.length)
+        if (bucketContents.length == bucketDesignatedItems.length && intersection.length == bucketDesignatedItems.length)
             return false;
         return true;
     }
@@ -582,6 +591,7 @@ class InventoryTransferManager {
                 // Only try to move equipped items if the bucket is not in inventory
                 if (!isInventory)
                     this.moveEquippedItems(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
+                this.equipDesignatedItem(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
                 this.moveTargetTemps(currentBucket, currentVaultBucket, target, bucketDesignatedItems);
             });
 
