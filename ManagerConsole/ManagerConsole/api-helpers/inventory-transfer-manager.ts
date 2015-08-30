@@ -449,7 +449,13 @@ class InventoryTransferManager {
 
         for (var item of items) {
             var toEquip: Inventory.InventoryItem;
-            if (state.characters[item.char].bucketCollection.getItems(currentBucket).length == 1) {
+
+            var equippableItemsInBucket: Inventory.InventoryItem[] = state.characters[item.char].bucketCollection
+                .getItems(currentBucket)
+                .filter(bucketItem =>
+                    ParserUtils.isTypeEquippable(bucketItem, state.characters[item.char].character));
+
+            if (equippableItemsInBucket.length == 1) {
                 // Get a list of temp items in the vault
                 var vaultTemps: Inventory.InventoryItem[] = this.findTempItems(
                     state.vault.bucketCollection.getItems(currentVaultBucket),
@@ -471,7 +477,7 @@ class InventoryTransferManager {
                 else if (vaultTemps.length > 0)
                     vaultTemp = vaultTemps[0];
                 // If there are no items in the vault elegible for transfer, then find an item in a non-target character
-                else
+                else {
                     for (var charId in state.characters) {
                         var character = state.characters[charId];
                         var temps: Inventory.InventoryItem[] = this.findTempItems(character.bucketCollection.getItems(currentBucket), DataStores.DataStores.appConfig.currentData.designatedItems);
@@ -483,6 +489,7 @@ class InventoryTransferManager {
                             vaultTemp = temps[0];
                         }
                     }
+                }
 
                 // Move the item in the vault to the character with the designated item to remove
                 this.inventoryMan.enqueueMoveOperation(state.characters[item.char], false, vaultTemp);
@@ -492,11 +499,15 @@ class InventoryTransferManager {
             // find the first equippable unequipped item and mark it as toEquip
             else {
                 var sourceBucket = state.characters[item.char].bucketCollection.getItems(currentBucket);
-                var toEquip = _.reject(sourceBucket, (iteratorItem) => iteratorItem.getIsEquipped() == true ||
-                    !ParserUtils.isTypeEquippable(iteratorItem, characters[item.char]))[0];
+                toEquip = _.reject(sourceBucket, (iteratorItem) => iteratorItem.getIsEquipped() == true
+                    || !ParserUtils.isTypeEquippable(iteratorItem, characters[item.char]))[0];
             }
-            // Equip toEquip to free up the designated item for removal
-            this.inventoryMan.enqueueEquipOperation(state.characters[item.char], toEquip);
+
+            // If we couldn't find an item to equip, ignore this step
+            if (!_.isUndefined(toEquip)) {
+                // Equip toEquip to free up the designated item for removal
+                this.inventoryMan.enqueueEquipOperation(state.characters[item.char], toEquip);
+            }
         }
 
         // Now that all equipped designated items have been unequipped, move all unequipped designated items to the target character
@@ -570,7 +581,7 @@ class InventoryTransferManager {
             // Loop through buckets
             _.each(designatedBuckets, (currentBucket: Inventory.InventoryBucket) => {
                 // Ghost shells and subclasses cannot be transferred
-                if (currentBucket == Inventory.InventoryBucket.GhostShell || currentBucket == Inventory.InventoryBucket.Subclass)
+                if (currentBucket == Inventory.InventoryBucket.Subclass)
                     return;
 
                 // Get list of designated items in the current bucket

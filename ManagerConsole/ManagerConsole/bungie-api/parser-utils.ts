@@ -158,10 +158,14 @@ class ParserUtils {
     }
 
     public static isTypeEquippable(item: Inventory.InventoryItem, targetCharacter?: Character.Character) {
+        var gearBucket: Inventory.InventoryBucket = this.getGearBucketForVaultItem(item);
+
         return !this.isEngram(item)
             && ((_.isUndefined(targetCharacter)
                 || _.isUndefined((<Inventory.ArmorItem>item).class))
-                || targetCharacter.characterClass == (<Inventory.ArmorItem>item).class);
+                || targetCharacter.characterClass == (<Inventory.ArmorItem>item).class)
+            && gearBucket !== Inventory.InventoryBucket.Consumables
+            && gearBucket !== Inventory.InventoryBucket.Materials;
     }
 
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
