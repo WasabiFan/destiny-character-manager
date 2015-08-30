@@ -97,7 +97,7 @@ class InventoryTransferManager {
         })());
     }
 
-    private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[], bucket?: Inventory.InventoryBucket) {
+    private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[], bucket?: Inventory.InventoryBucket): Inventory.InventoryItem[] {
         // TODO: Remove all this duplicate code
         // It looks like we can always use both attribs
 
@@ -330,17 +330,19 @@ class InventoryTransferManager {
 
             // Get info about how full the characters are
             fullInfo = this.getCharactersFullInfo(state, currentBucket, currentVaultBucket, targetCharacter);
-            // If the target is full
+
+            // If the item is not in the vault, move it to the vault
+            if (!isInVault)
+                this.inventoryMan.enqueueMoveOperation(state.characters[item.char], true, item.item);
+
+            // If the target is full, clear some space
             if (fullInfo.targetFull) {
-                // If the item is not in the vault, move it to the vault
-                if (!isInVault)
-                    this.inventoryMan.enqueueMoveOperation(state.characters[item.char], true, item.item);
                 // Move an item from the vault to make room for two items to pass
                 this.moveAnyItemFromVault(currentBucket, currentVaultBucket, targetCharacter, bucketDesignatedItems, [item.item]);
                 // Array of temp items in the target bucket
-                var temps: Inventory.InventoryItem[] = this.findTempItems(
+                var temps: Inventory.InventoryItem[] = _.reject(this.findTempItems(
                     state.characters[targetCharacter.id].bucketCollection.getItems(currentBucket),
-                    DataStores.DataStores.appConfig.currentData.designatedItems);
+                    DataStores.DataStores.appConfig.currentData.designatedItems), item => item.getIsEquipped());
                 // Move the first temp item to the vault
                 this.inventoryMan.enqueueMoveOperation(state.characters[targetCharacter.id], true, temps[0]);
                 // Move the item to the target bucket
@@ -348,9 +350,6 @@ class InventoryTransferManager {
             }
             // If the target is not full, move the item with no complications
             else {
-                // If the item is not in the vault, move it there
-                if (!isInVault)
-                    this.inventoryMan.enqueueMoveOperation(state.characters[item.char], true, item.item);
                 // Move the item to the target bucket
                 this.inventoryMan.enqueueMoveOperation(state.characters[targetCharacter.id], false, item.item);
             }

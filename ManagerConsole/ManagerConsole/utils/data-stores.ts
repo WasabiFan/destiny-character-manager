@@ -178,7 +178,7 @@ export class DataStores {
     private static cachePath = './cache.json';
 
     public static load() {
-        this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Character.AliasedCharacter, Membership.Member);
+        this.appConfig = new LocalDataStore.LocalDataStore<AppConfiguration>(this.configPath, AppConfiguration, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Inventory.ArmorItem, Character.AliasedCharacter, Membership.Member);
         this.appConfig.load();
 
         this.armoryCache = new LocalDataStore.LocalDataStore<ArmoryCache>(this.cachePath, ArmoryCache, Inventory.InventoryItem, Inventory.WeaponItem, Inventory.StackableItem, Inventory.ArmorItem, Armory.ItemArmoryMetadata);
