@@ -210,7 +210,7 @@ export class InventoryManager {
             if (_.isUndefined(this.lastRegisteredQueueOperation) || _.isNull(this.lastRegisteredQueueOperation))
                 executeAction();
             else
-                this.lastRegisteredQueueOperation.context.executionPromise.then(executeAction).catch(reject);
+                this.lastRegisteredQueueOperation.context.registerCancellable(executeAction, reject);
         });
 
         newOperation.context.executionPromise = newPromise;
@@ -347,6 +347,19 @@ export class InventoryManager {
 
         return promise;
     }
+
+    public clearQueue() {
+        // NOTE: This won't actually stop the waiting promises
+
+        if (this.lastRegisteredQueueOperation)
+            this.lastRegisteredQueueOperation.context.cancelChain();
+
+        if (this.lastExecutedQueueOperation)
+            this.lastExecutedQueueOperation.context.cancelChain();
+
+        this.lastRegisteredQueueOperation = null;
+        this.lastExecutedQueueOperation = null;
+    }
 }
 
 export class InventoryState {
@@ -400,6 +413,8 @@ export class OperationContext {
     public itemSourceTrace: stackTrace.StackFrame[] = [];
     public startTime: Date;
     public executionPromise: Promise<any>;
+    
+    private shouldCancel = false;
 
     constructor(item: Inventory.InventoryItem) {
         this.item = item;
@@ -409,5 +424,23 @@ export class OperationContext {
 
     public loadTrace(skipFrames?: number) {
         this.itemSourceTrace = stackTrace.get().slice((skipFrames || 0) + 1);
+    }
+
+    public cancelChain() {
+        this.shouldCancel = true;
+    }
+
+    public registerCancellable(onResolve: (value?) => void, onReject?: (err?) => void) {
+        this.executionPromise.then((value?) => {
+            if (!this.shouldCancel)
+                onResolve(value);
+        });
+
+        if (!_.isUndefined(onReject)) {
+            this.executionPromise.catch((err?) => {
+                if (!this.shouldCancel)
+                    onReject(err);
+            });
+        }
     }
 }

@@ -210,7 +210,15 @@ export class DestinyCommandConsole {
             return;
         }
 
-        return this.transferMan.transferDesignatedItems(targetCharacter);
+        var newPromise = new Promise((resolve, reject) => {
+            this.transferMan.transferDesignatedItems(targetCharacter).then(resolve).catch((err) => {
+                this.inventoryManager.clearQueue();
+
+                this.inventoryManager.loadState().then(() => reject(err));
+            });
+        });
+
+        return newPromise;
     }
 
     private markAction(fullArgs: string, characterAlias: string, filterStr: string) {

@@ -15,7 +15,6 @@ import InventoryManager = require('./inventory-manager');
 
 class InventoryTransferManager {
     private inventoryMan: InventoryManager.InventoryManager;
-    private promiseParams;
 
     constructor(inventoryMan: InventoryManager.InventoryManager) {
         this.inventoryMan = inventoryMan;
@@ -553,8 +552,7 @@ class InventoryTransferManager {
 
     public transferDesignatedItems(target: Character.Character) {
         return new Promise((resolve, reject) => {
-            // Set class variable so submethods can reject with global errors
-            this.promiseParams = { 'resolve': resolve, 'reject': reject };
+
             // If the inventory is not loaded, no items can be transferred
             if (!this.inventoryMan.isLoaded)
                 reject(new Errors.Exception('The inventory must be loaded before transferring items.'));
