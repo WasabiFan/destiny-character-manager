@@ -302,7 +302,7 @@ export class InventoryManager {
         return result;
     }
 
-    public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode) {
+    public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode): Inventory.InventoryItem[] {
         var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(characterAlias);
 
         // If they're removing items, they don't need to specify a character
@@ -333,6 +333,8 @@ export class InventoryManager {
                 DataStores.DataStores.appConfig.currentData.designatedItems.splice(designatedItemIndex, 1);
             }
         }
+
+        return selectedItems;
     }
 
     public getCurrentQueueTerminationPromise(): Promise<any> {

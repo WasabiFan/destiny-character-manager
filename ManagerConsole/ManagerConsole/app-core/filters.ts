@@ -56,6 +56,7 @@ export class FilterData {
         // Extras
         'vehicle': Inventory.InventoryBucket.Vehicle,
         'v': Inventory.InventoryBucket.Vehicle,
+        'ship': Inventory.InventoryBucket.Ship,
         'material': Inventory.InventoryBucket.Materials,
         'materials': Inventory.InventoryBucket.Materials,
         'mat': Inventory.InventoryBucket.Materials,

@@ -217,7 +217,11 @@ export class DestinyCommandConsole {
         this.assertFullAuth();
 
         var filter = new Filters.InventoryFilter(filterStr);
-        this.inventoryManager.applyFilterToDesignatedItems(characterAlias, filter, Filters.FilterMode.Add);
+        var markedItems = this.inventoryManager.applyFilterToDesignatedItems(characterAlias, filter, Filters.FilterMode.Add);
+
+        console.log("Marked items:");
+        this.printItemTable(markedItems);
+
         this.reportDesignationValidity();
 
         DataStores.DataStores.appConfig.save();
@@ -228,7 +232,11 @@ export class DestinyCommandConsole {
 
         var filter = new Filters.InventoryFilter(filterStr);
 
-        this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
+        var unmarkedItems = this.inventoryManager.applyFilterToDesignatedItems(undefined, filter, Filters.FilterMode.Remove);
+
+        console.log("Unmarked items: ");
+        this.printItemTable(unmarkedItems);
+
         this.reportDesignationValidity();
 
         DataStores.DataStores.appConfig.save();
