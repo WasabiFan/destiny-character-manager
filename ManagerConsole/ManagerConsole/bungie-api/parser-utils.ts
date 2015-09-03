@@ -106,7 +106,7 @@ class ParserUtils {
         'BUCKET_GHOST': 10,
         'BUCKET_VEHICLE': 10,
         'BUCKET_SHIP': 10,
-        'BUCKET_SHADER': 10,
+        'BUCKET_SHADER': 9, // The default shader takes up a space, and we can't move it
         'BUCKET_EMBLEM': 10,
         'BUCKET_MATERIALS': 15,
         'BUCKET_CONSUMABLES': 15,
@@ -166,6 +166,11 @@ class ParserUtils {
                 || targetCharacter.characterClass == (<Inventory.ArmorItem>item).class)
             && gearBucket !== Inventory.InventoryBucket.Consumables
             && gearBucket !== Inventory.InventoryBucket.Materials;
+    }
+
+    public static isTypeMovable(item: Inventory.InventoryItem) {
+        // Default shader
+        return !(item.itemHash == '4248210736');
     }
 
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {

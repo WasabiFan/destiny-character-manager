@@ -13,6 +13,17 @@ import Errors = require('../utils/errors');
 // API helpers
 import InventoryManager = require('./inventory-manager');
 
+// 
+// Dear maintainer:
+// 
+// Once you are done trying to 'optimize' this routine,
+// and have realized what a terrible mistake that was,
+// please increment the following counter as a warning
+// to the next guy:
+// 
+// total_hours_wasted_here = 42
+//
+
 class InventoryTransferManager {
     private inventoryMan: InventoryManager.InventoryManager;
 
@@ -97,13 +108,13 @@ class InventoryTransferManager {
     }
 
     private findTempItems(lookupBucketContents: Inventory.InventoryItem[], designatedItems: Inventory.InventoryItem[], bucket?: Inventory.InventoryBucket): Inventory.InventoryItem[] {
-        // TODO: Remove all this duplicate code
-        // It looks like we can always use both attribs
 
         // Array of attributes to check in items to confirm equality
         var checkAttributeNames = ['instanceId', 'itemHash'];
         // Return the array of temp items from this.diffArraysOfObjects
-        return this.diffArraysOfObjects(checkAttributeNames, lookupBucketContents, designatedItems);
+        return _.filter(
+            this.diffArraysOfObjects(checkAttributeNames, lookupBucketContents, designatedItems),
+            (item: Inventory.InventoryItem) => ParserUtils.isTypeMovable(item));
     }
 
     private getCharactersFullInfo(state: InventoryManager.InventoryState, currentBucket: Inventory.InventoryBucket, currentVaultBucket: Inventory.InventoryBucket, target: Character.Character) {
