@@ -39,9 +39,9 @@ export class BucketGearCollection {
     }
 
     public getEquippedItem(bucket: Inventory.InventoryBucket): Inventory.InventoryItem {
-        for (var i in this.bucketMap[bucket])
-            if (this.bucketMap[bucket][i] instanceof Inventory.GearItem && (<Inventory.GearItem>this.bucketMap[bucket][i]).isEquipped)
-                return this.bucketMap[bucket][i];
+        for (var item of this.bucketMap[bucket].contents)
+            if (item instanceof Inventory.GearItem && (<Inventory.GearItem>item).isEquipped)
+                return item;
 
         return null;
     }

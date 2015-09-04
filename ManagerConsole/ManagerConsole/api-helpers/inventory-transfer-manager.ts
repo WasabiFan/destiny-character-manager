@@ -460,10 +460,18 @@ class InventoryTransferManager {
         for (var item of items) {
             var toEquip: Inventory.InventoryItem;
 
+            var exoticEquippedBuckets = _.chain(ParserUtils.getAllBucketsInExoticCategory(item.item.bucket))
+                .reject(bucket => bucket == item.item.bucket)
+                .select(bucket => {
+                var equippedItem = state.characters[item.char].bucketCollection.getEquippedItem(bucket);
+                return equippedItem.tier === Inventory.InventoryItemTier.Exotic;
+            }).value();
+
             var equippableItemsInBucket: Inventory.InventoryItem[] = state.characters[item.char].bucketCollection
                 .getItems(currentBucket)
                 .filter(bucketItem =>
-                    ParserUtils.isTypeEquippable(bucketItem, state.characters[item.char].character));
+                    ParserUtils.isTypeEquippable(bucketItem, state.characters[item.char].character))
+                .filter(bucketItem => bucketItem.tier !== Inventory.InventoryItemTier.Exotic || exoticEquippedBuckets.length <= 0);
 
             if (equippableItemsInBucket.length == 1) {
                 // Get a list of temp items in the vault
@@ -584,7 +592,7 @@ class InventoryTransferManager {
                     return items.length > 0 && _.every(items, item => item.tier === Inventory.InventoryItemTier.Exotic);
                 });
                 if (onlyExotics.length > 1)
-                    reject(new Error('There must be at least three armor buckets and two weapon buckets with non- exotic items in them'));
+                    reject(new Error('There must be at least three armor buckets and two weapon buckets with non-exotic items in them'));
             });
 
             // Loop through buckets

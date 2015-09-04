@@ -173,6 +173,10 @@ class ParserUtils {
         return !(item.itemHash == '4248210736');
     }
 
+    public static getAllBucketsInExoticCategory(bucket: Inventory.InventoryBucket): Inventory.InventoryBucket[]{
+        return _.where(this.exoticBucketGroups, group => _.contains(group, bucket))[0];
+    }
+
     private static getGearBucketForItemType(type: Inventory.InventoryItemType): Inventory.InventoryBucket {
         switch (type) {
             case Inventory.InventoryItemType.TitanMark:
