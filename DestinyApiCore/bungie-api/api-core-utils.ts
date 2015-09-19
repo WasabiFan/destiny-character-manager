@@ -9,13 +9,12 @@ import _ = require('underscore');
 
 import Membership = require('./api-objects/membership');
 import Character = require('./api-objects/character');
-import DataStores = require('../utils/data-stores');
 import Errors = require('../utils/errors');
 
 class BungieApiCore {
     private static endpointFormat = 'https://www.bungie.net/en/Legend/%s/%s/%s/%s?ajax=true';
 
-    public static loadEndpointHtml(endpointUrl: string, queryParams?: any): Promise<string> {
+    public static loadEndpointHtml(endpointUrl: string, authHeaders: any, queryParams?: any): Promise<string> {
 
         if (queryParams != undefined) {
             var urlObj = url.parse(endpointUrl, true);
@@ -29,7 +28,7 @@ class BungieApiCore {
 
         var opts = {
             url: endpointUrl,
-            headers: this.getAuthHeaders()
+            headers: authHeaders
         };
 
         var promise = new Promise<string>((resolve, reject) => {
@@ -50,14 +49,6 @@ class BungieApiCore {
 
     public static buildEndpointStr(targetArea, member: Membership.Member, character: Character.Character) {
         return util.format(this.endpointFormat, targetArea, member.type, member.id, character.id);
-    }
-
-    public static getAuthHeaders(): any {
-        return {
-            'Cookie': DataStores.DataStores.appConfig.currentData.authCookie,
-            'x-api-key': DataStores.DataStores.appConfig.currentData.apiKey,
-            'x-csrf': DataStores.DataStores.appConfig.currentData.csrf
-        };
     }
 }
 

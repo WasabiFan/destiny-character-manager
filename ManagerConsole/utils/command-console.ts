@@ -1,8 +1,10 @@
 ﻿var sys = require('sys');
 import chalk = require('chalk');
-import Errors = require('./errors');
 import DataStores = require('./data-stores');
 import _ = require('underscore');
+
+// Destiny API
+import DestinyLib = require('../../DestinyApiCore/index');
 
 export class CommandConsole {
     private options: CommandConsoleOptions;
@@ -48,19 +50,19 @@ export class CommandConsole {
                 actionResult.then(() => {
                     this.reopenPrompt();
                 }).catch(error => {
-                    if (error instanceof Errors.Exception) {
-                        if (this.options.warningExceptionCodes.indexOf((<Errors.Exception>error).exceptionCode) >= 0)
-                            (<Errors.Exception>error).logAsWarning();
-                        else if ((<Errors.Exception>error).exceptionCode === Errors.ExceptionCode.InvalidCommandParams)
-                            (<Errors.Exception>error).logErrorMessage();
+                    if (error instanceof DestinyLib.Errors.Exception) {
+                        if (this.options.warningExceptionCodes.indexOf((<DestinyLib.Errors.Exception>error).exceptionCode) >= 0)
+                            (<DestinyLib.Errors.Exception>error).logAsWarning();
+                        else if ((<DestinyLib.Errors.Exception>error).exceptionCode === DestinyLib.Errors.ExceptionCode.InvalidCommandParams)
+                            (<DestinyLib.Errors.Exception>error).logErrorMessage();
                         else if (DataStores.DataStores.appConfig.currentData.debugMode)
-                            (<Errors.Exception>error).logErrorDetail();
+                            (<DestinyLib.Errors.Exception>error).logErrorDetail();
                         else
-                            (<Errors.Exception>error).logErrorMessage();
+                            (<DestinyLib.Errors.Exception>error).logErrorMessage();
                     }
                     else if (error instanceof Error) {
-                        console.error(chalk.bgRed((<Errors.Error>error).message));
-                        console.error('  ' + (<Errors.Error>error).stack);
+                        console.error(chalk.bgRed((<DestinyLib.Errors.Error>error).message));
+                        console.error('  ' + (<DestinyLib.Errors.Error>error).stack);
                     }
                     else console.error(chalk.bgRed(error));
 
@@ -94,7 +96,7 @@ export class CommandConsole {
 export class CommandConsoleOptions {
     public commandRoot: Command;
     public header: string[];
-    public warningExceptionCodes: Errors.ExceptionCode[] = [];
+    public warningExceptionCodes: DestinyLib.Errors.ExceptionCode[] = [];
 }
 
 export class Command {

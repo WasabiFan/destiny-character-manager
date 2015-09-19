@@ -6,17 +6,15 @@ var destiny = require('destiny-client')();
 import Inventory = require('../bungie-api/api-objects/inventory');
 import Character = require('../bungie-api/api-objects/character');
 import GearCollection = require('../bungie-api/api-objects/bucket-gear-collection');
-import Bungie = require('../bungie-api/api-core');
-import Vault = require('../bungie-api/vault-api');
-import Gear = require('../bungie-api/gear-api');
+import Bungie = require('../bungie-api/api-core-utils');
+import Vault = require('../bungie-api/vault-api-loader');
+import Gear = require('../bungie-api/gear-api-loader');
 import ParserUtils = require('../bungie-api/parser-utils');
+import BungieApiConnection = require('./bungie-api-connection');
+import Caches = require('../api-helpers/caches');
 
 // Utils
-import DataStores = require('../utils/data-stores');
 import Errors = require('../utils/errors');
-
-// App core
-import Filters = require('../app-core/filters');
 
 export class InventoryManager {
     private workingState: InventoryState;
@@ -24,19 +22,25 @@ export class InventoryManager {
     private lastExecutedQueueOperation: QueuedOperation;
     private requestCounter: number = 0;
 
+    private apiConnection: BungieApiConnection.BungieApiConnection;
+    private dataCache: Caches.FileObjectCache<Caches.BungieApiCacheData>;
+
     private timeoutBetweenRequests = 1000 * 1.1;
 
-    public loadState(): Promise<any> {
-        if (!DataStores.DataStores.appConfig.currentData.hasFullAuthInfo)
-            return Promise.reject(new Errors.Exception('Full authentication info must be available in the application config before loading data.', Errors.ExceptionCode.InsufficientAuthConfig));
+    public InventoryManager(apiConnection: BungieApiConnection.BungieApiConnection, connectionCache: Caches.FileObjectCache<Caches.BungieApiCacheData>) {
+        this.apiConnection = apiConnection;
 
+        this.dataCache = connectionCache;
+    }
+
+    public loadState(): Promise<any> {
         var workingState = this.workingState = new InventoryState();
 
         var promises: Promise<any>[] = [];
-        DataStores.DataStores.appConfig.currentData.characters.forEach((currentCharacter, characterIndex) => {
+        this.apiConnection.characters.forEach((currentCharacter, characterIndex) => {
             var promise = new Promise((resolve, reject) => {
                 // TODO: inventory
-                Gear.getItems(currentCharacter).then(buckets => {
+                Gear.getItems(currentCharacter, this.apiConnection.authMember, this.apiConnection.authHeaders, this.dataCache).then(buckets => {
                     workingState.characters[currentCharacter.id] = this.getCharacterFromBuckets(buckets, currentCharacter);
 
                     resolve();
@@ -49,7 +53,7 @@ export class InventoryManager {
 
         var vaultPromise = new Promise((resolve, reject) => {
             // TODO: If there are no characters, this next line will break
-            Vault.getItems(DataStores.DataStores.appConfig.currentData.characters[0]).then(items => {
+            Vault.getItems(this.apiConnection.characters[0], this.apiConnection.authMember, this.apiConnection.authHeaders, this.dataCache).then(items => {
                 this.workingState.vault = new VaultInventoryState();
                 var buckets = new GearCollection.BucketGearCollection(items);
 
@@ -129,7 +133,7 @@ export class InventoryManager {
         
         // Get all the API params
         newOperation.operationParams = {
-            membershipType: DataStores.DataStores.appConfig.currentData.authMember.type,
+            membershipType: this.apiConnection.authMember.type,
             characterId: character.character.id,
             itemId: item.instanceId,
             itemReferenceHash: item.itemHash,
@@ -183,7 +187,7 @@ export class InventoryManager {
 
         // Set the operation-specific params
         newOperation.operationParams = {
-            membershipType: DataStores.DataStores.appConfig.currentData.authMember.type,
+            membershipType: this.apiConnection.authMember.type,
             characterId: character.character.id,
             itemId: item.instanceId
         };
@@ -229,12 +233,12 @@ export class InventoryManager {
                 console.log('[Request ' + (++this.requestCounter) + (retryCounter > 1 ? ('; retry ' + (retryCounter - 1)) : '') + '] '
                     + 'Executing ' + QueuedOperationType[operation.type] + ' operation on item ' + operation.context.item.name);
 
-                if (DataStores.DataStores.appConfig.currentData.debugMode)
+                if (this.apiConnection.debugMode)
                     console.log('Params: ' + JSON.stringify(operation.operationParams, null, 4));
 
                 operation.context.startTime = new Date();
                 this.lastExecutedQueueOperation = operation;
-                destinyApiFunction(operation.operationParams, Bungie.getAuthHeaders()).then(res => {
+                destinyApiFunction(operation.operationParams, this.apiConnection.authHeaders).then(res => {
                     if (res.ErrorStatus == "Success") {
                         resolve();
                     }
@@ -300,41 +304,6 @@ export class InventoryManager {
         }
 
         return result;
-    }
-
-    public applyFilterToDesignatedItems(characterAlias: string, filter: Filters.InventoryFilter, filterMode: Filters.FilterMode): Inventory.InventoryItem[] {
-        var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(characterAlias);
-
-        // If they're removing items, they don't need to specify a character
-        if (targetCharacter == null && filterMode == Filters.FilterMode.Add) {
-            throw new Errors.Exception('Invalid source alias: ' + characterAlias, Errors.ExceptionCode.InvalidCommandParams);
-        }
-
-        var collectionToSearch: Inventory.InventoryItem[] = [];
-        if (filterMode == Filters.FilterMode.Add) {
-            collectionToSearch = this.getAllCharacterItems(targetCharacter);
-        }
-        else if (filterMode == Filters.FilterMode.Remove) {
-            collectionToSearch = DataStores.DataStores.appConfig.currentData.designatedItems;
-        }
-
-        var selectedItems = filter.findMatchesInCollection(collectionToSearch);
-
-        if (filterMode == Filters.FilterMode.Add) {
-            DataStores.DataStores.appConfig.currentData.designatedItems = _.union(DataStores.DataStores.appConfig.currentData.designatedItems, selectedItems);
-        }
-        else if (filterMode == Filters.FilterMode.Remove) {
-            for (var selIndex in selectedItems) {
-                var designatedItemIndex = Filters.FilterUtils.customIndexOf(DataStores.DataStores.appConfig.currentData.designatedItems, (item) => {
-                    return item.instanceId == selectedItems[selIndex].instanceId
-                        && item.itemHash == selectedItems[selIndex].itemHash;
-                });
-
-                DataStores.DataStores.appConfig.currentData.designatedItems.splice(designatedItemIndex, 1);
-            }
-        }
-
-        return selectedItems;
     }
 
     public getCurrentQueueTerminationPromise(): Promise<any> {

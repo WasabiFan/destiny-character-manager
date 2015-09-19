@@ -8,8 +8,11 @@ import Character = require('../bungie-api/api-objects/character');
 import Inventory = require('../bungie-api/api-objects/inventory');
 import Armory = require('../bungie-api/armory-api');
 import LocalDataStore = require('./local-data-store');
-import Errors = require('./errors');
 var destiny = require('destiny-client')();
+
+
+// Destiny API
+import DestinyLib = require('../../DestinyApiCore/index');
 
 export class AppConfiguration {
     public authMember: Membership.Member;
@@ -74,7 +77,7 @@ export class AppConfiguration {
                 membershipId: this.authMember.id
             }).then((result) => {
                 if (!_.isArray(result.characters)) {
-                    reject(new Errors.Exception('API returned invalid result while querying for available characters.'));
+                    reject(new DestinyLib.Errors.Exception('API returned invalid result while querying for available characters.'));
                     return;
                 }
 
@@ -108,7 +111,7 @@ export class AppConfiguration {
 
     public loadAuthFromHar(harPath: string): Promise<any> {
         if (harPath.length <= 0 || !fs.existsSync(harPath)) {
-            return Promise.reject(new Errors.Exception('The given file name is not valid.'));
+            return Promise.reject(new DestinyLib.Errors.Exception('The given file name is not valid.'));
         }
 
         // TODO: Print basic HAR info
@@ -134,7 +137,7 @@ export class AppConfiguration {
                 });
             }).on('end', () => {
                 if (cookies.length < 10 || _.isUndefined(apiKey) || _.isUndefined(csrf)) {
-                    reject(new Errors.Exception('We were unable to load all of the required data from the HAR file.'));
+                    reject(new DestinyLib.Errors.Exception('We were unable to load all of the required data from the HAR file.'));
                 }
 
                 var cookieStr = _.map(cookies, cookie => cookie.name + '=' + cookie.value + ';').join(' ');

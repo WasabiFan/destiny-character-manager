@@ -17,19 +17,19 @@ import ParserUtils = require('../bungie-api/parser-utils');
 // Utils
 import DataStores = require('../utils/data-stores');
 import Console = require('../utils/command-console');
-import Errors = require('../utils/errors');
-
 // API helpers
 import InventoryTransferManager = require('../api-helpers/inventory-transfer-manager');
-import InventoryManager = require('../api-helpers/inventory-manager');
 
 // App core
 import Filters = require('../app-core/filters');
 
+// Destiny API
+import DestinyLib = require('../../DestinyApiCore/index');
+
 export class DestinyCommandConsole {
     private commandConsole: Console.CommandConsole;
     private consoleOptions: Console.CommandConsoleOptions;
-    private inventoryManager: InventoryManager.InventoryManager;
+    private inventoryManager: DestinyLib.InventoryManager.InventoryManager;
     private transferMan: InventoryTransferManager;
 
     private glimmerMap: { [itemHash: string]: number } = {
@@ -87,9 +87,9 @@ export class DestinyCommandConsole {
             'Destiny character management console v' + package.version
         ];
 
-        this.consoleOptions.warningExceptionCodes.push(Errors.ExceptionCode.InsufficientAuthConfig);
+        this.consoleOptions.warningExceptionCodes.push(DestinyLib.Errors.ExceptionCode.InsufficientAuthConfig);
 
-        this.inventoryManager = new InventoryManager.InventoryManager();
+        this.inventoryManager = new DestinyLib.InventoryManager.InventoryManager();
         this.transferMan = new InventoryTransferManager(this.inventoryManager);
     }
 
@@ -98,7 +98,7 @@ export class DestinyCommandConsole {
             this.commandConsole = new Console.CommandConsole(this.consoleOptions);
             this.commandConsole.start();
 
-        }).catch((error: Errors.Exception) => {
+        }).catch((error: DestinyLib.Errors.Exception) => {
             console.log('Error encountered while loading data. Please restart the app and try again.');
 
             // TODO: Figure out what we want to print here
@@ -109,7 +109,7 @@ export class DestinyCommandConsole {
 
     private assertFullAuth() {
         if (!DataStores.DataStores.appConfig.currentData.hasFullAuthInfo)
-            throw new Errors.Exception('You cannot perform this action without loaded authentication info.', Errors.ExceptionCode.InsufficientAuthConfig);
+            throw new DestinyLib.Errors.Exception('You cannot perform this action without loaded authentication info.', DestinyLib.Errors.ExceptionCode.InsufficientAuthConfig);
     }
 
     private reloadState(): Promise<any> {
@@ -118,8 +118,8 @@ export class DestinyCommandConsole {
             this.inventoryManager.loadState().then(() => {
                 console.log('Inventory data loaded.');
                 resolve();
-            }).catch((error: Errors.Exception) => {
-                if (error.exceptionCode == Errors.ExceptionCode.InsufficientAuthConfig) {
+            }).catch((error: DestinyLib.Errors.Exception) => {
+                if (error.exceptionCode == DestinyLib.Errors.ExceptionCode.InsufficientAuthConfig) {
                     console.warn(chalk.bgYellow(error.message));
                     console.warn('You may still use the console, but only configuration commands will be available.');
                     // TODO: add note about reloading state when configured w/ instructions on configuring
@@ -165,7 +165,7 @@ export class DestinyCommandConsole {
         var items = this.getItemsFromAlias(characterAlias);
 
         if (items == null) {
-            throw new Errors.Exception('Invalid source alias: ' + characterAlias, Errors.ExceptionCode.InvalidCommandParams);
+            throw new DestinyLib.Errors.Exception('Invalid source alias: ' + characterAlias, DestinyLib.Errors.ExceptionCode.InvalidCommandParams);
         }
 
         var filteredItems = filter.findMatchesInCollection(items);
@@ -270,7 +270,7 @@ export class DestinyCommandConsole {
         var parsedNetwork = ParserUtils.parseMemberNetworkType(network);
 
         if (_.isNull(parsedNetwork))
-            return Promise.reject(new Errors.Exception('You must pass a valid network identidier as the first parameter to this init command. Try "xbl" or "psn".', Errors.ExceptionCode.InvalidCommandParams));
+            return Promise.reject(new DestinyLib.Errors.Exception('You must pass a valid network identidier as the first parameter to this init command. Try "xbl" or "psn".', DestinyLib.Errors.ExceptionCode.InvalidCommandParams));
 
         return DataStores.DataStores.appConfig.currentData
             .loadMemberInfoFromApi(userName.join(' '), parsedNetwork)
@@ -280,7 +280,7 @@ export class DestinyCommandConsole {
     private initCharacterAction(fullArgs: string): Promise<any> {
         if (DataStores.DataStores.appConfig.currentData.authMember == undefined) {
             var errorStr = 'You must load basic authentication info before querying for characters.';
-            return Promise.reject(new Errors.Exception(errorStr));
+            return Promise.reject(new DestinyLib.Errors.Exception(errorStr));
         }
 
         return DataStores.DataStores.appConfig.currentData
@@ -438,14 +438,14 @@ export class DestinyCommandConsole {
     private loadTextCookieAction(fullArgs: string, ...fileName: string[]): Promise<any> {
         var fileStr = fileName.join(' ');
         if (fileName.length <= 0 || !fs.existsSync(fileStr)) {
-            return Promise.reject(new Errors.Exception('The given cookie file name is not valid.'));
+            return Promise.reject(new DestinyLib.Errors.Exception('The given cookie file name is not valid.'));
         }
 
         var promise = new Promise((resolve, reject) => {
             fs.readFile(fileStr, (error, data) => {
 
                 if (!_.isNull(error)) {
-                    reject(new Errors.Exception('An error was encountered while reading from the cookie file.', new Errors.Exception(error.message + '(code ' + error.code + ')')));
+                    reject(new DestinyLib.Errors.Exception('An error was encountered while reading from the cookie file.', new DestinyLib.Errors.Exception(error.message + '(code ' + error.code + ')')));
                     return;
                 }
 

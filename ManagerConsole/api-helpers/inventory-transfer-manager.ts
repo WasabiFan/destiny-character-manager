@@ -1,17 +1,10 @@
 ﻿import _ = require('underscore');
-var destiny = require('destiny-client')();
-
-// Bungie API
-import Inventory = require('../bungie-api/api-objects/inventory');
-import Character = require('../bungie-api/api-objects/character');
-import ParserUtils = require('../bungie-api/parser-utils');
 
 // Utils
 import DataStores = require('../utils/data-stores');
-import Errors = require('../utils/errors');
 
-// API helpers
-import InventoryManager = require('./inventory-manager');
+// Destiny API
+import DestinyLib = require('../../DestinyApiCore/index');
 
 // 
 // Dear maintainer:

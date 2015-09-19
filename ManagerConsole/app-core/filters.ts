@@ -1,7 +1,9 @@
 ﻿// Bungie API
 import Inventory = require('../bungie-api/api-objects/inventory');
 import ParserUtils = require('../bungie-api/parser-utils');
-import Errors = require('../utils/errors');
+
+// Destiny API
+import DestinyLib = require('../../DestinyApiCore/index');
 
 export class FilterUtils {
     public static customIndexOf<T>(collection: T[], selector: (item: T) => boolean): number {
@@ -146,7 +148,7 @@ export class InventoryFilter {
 
             switch (filterPart.filterType) {
                 case FilterType.Invalid:
-                    throw new Errors.Exception('Invalid filter: ' + filterParts[i], Errors.ExceptionCode.InvalidFilter);
+                    throw new DestinyLib.Errors.Exception('Invalid filter: ' + filterParts[i], DestinyLib.Errors.ExceptionCode.InvalidFilter);
                     break;
                 case FilterType.NameFilter:
                     this.keywords.push(filterPart.baseKeyword.toLowerCase());
@@ -179,6 +181,41 @@ export class InventoryFilter {
         }
 
         return result;
+    }
+
+    public applyFilterToDesignatedItems(characterAlias: string, filter: InventoryFilter, filterMode: FilterMode): Inventory.InventoryItem[] {
+        var targetCharacter = DataStores.DataStores.appConfig.currentData.getCharacterFromAlias(characterAlias);
+
+        // If they're removing items, they don't need to specify a character
+        if (targetCharacter == null && filterMode == FilterMode.Add) {
+            throw new DestinyLib.Errors.Exception('Invalid source alias: ' + characterAlias, DestinyLib.Errors.ExceptionCode.InvalidCommandParams);
+        }
+
+        var collectionToSearch: Inventory.InventoryItem[] = [];
+        if (filterMode == FilterMode.Add) {
+            collectionToSearch = this.getAllCharacterItems(targetCharacter);
+        }
+        else if (filterMode == FilterMode.Remove) {
+            collectionToSearch = DataStores.DataStores.appConfig.currentData.designatedItems;
+        }
+
+        var selectedItems = filter.findMatchesInCollection(collectionToSearch);
+
+        if (filterMode == FilterMode.Add) {
+            DataStores.DataStores.appConfig.currentData.designatedItems = _.union(DataStores.DataStores.appConfig.currentData.designatedItems, selectedItems);
+        }
+        else if (filterMode == FilterMode.Remove) {
+            for (var selIndex in selectedItems) {
+                var designatedItemIndex = FilterUtils.customIndexOf(DataStores.DataStores.appConfig.currentData.designatedItems, (item) => {
+                    return item.instanceId == selectedItems[selIndex].instanceId
+                        && item.itemHash == selectedItems[selIndex].itemHash;
+                });
+
+                DataStores.DataStores.appConfig.currentData.designatedItems.splice(designatedItemIndex, 1);
+            }
+        }
+
+        return selectedItems;
     }
 }
 
