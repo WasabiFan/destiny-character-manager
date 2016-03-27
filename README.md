@@ -2,6 +2,8 @@ Destiny Character Management Console
 ================================
 This app provides an easy-to-use interface for you to manage your Destiny inventory. It automates the process of moving weapons and other inventory items between characters without requiring you to enter the in-game Tower, letting you keep all your favorite things close at hand. We can maintain inventories of any size, with anywhere from one to three characters.
 
+**NOTE:** This repo is no longer maintained and is not compatible with Destiny's Year Two ecosystem.
+
 ## Quick-start
 
 ### TL; DR
